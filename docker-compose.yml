@@ -1,0 +1,39 @@
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: educationapi_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: educationapi_db
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
+      MYSQL_USER: ${DB_USERNAME:-educationapi}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-educationapi}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: educationapi_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # waits for MySQL to be ready
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: ${DB_USERNAME:-educationapi}
+      DB_PASSWORD: ${DB_PASSWORD:-educationapi}
+
+volumes:
+  mysql_data:

@@ -1,3 +1,20 @@
 spring:
+  profiles:
+    active: local
   application:
     name: education-api
+
+  # JPA common settings
+  jpa:
+    open-in-view: false         # best practice — disable OSIV
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Thymeleaf common
+  thymeleaf:
+    cache: false                # always off during dev; can override per profile
+
+server:
+  port: 8080
+

@@ -31,3 +31,17 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### my helper folder ###
+helper-docs
+
+### secrets ###
+.env
+.env.*
+!.env.example
+application-local.yml
+
+### OS garbage ###
+.DS_Store
+Thumbs.db
+
