@@ -11,6 +11,7 @@ import com.vbforge.educationapi.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class StudentService {
     private final PasswordEncoder passwordEncoder;   // injected from SecurityConfig later
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
     public PageResponseDto<StudentResponseDto> findAll(Pageable pageable) {
         Page<Student> page = studentRepository.findAll(pageable);
         return toPageResponse(page);
@@ -76,6 +78,7 @@ public class StudentService {
         return StudentMapper.toDto(studentRepository.save(student));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(Long id) {
         if (!studentRepository.existsById(id)) {
             throw new ResourceNotFoundException("Student", id);

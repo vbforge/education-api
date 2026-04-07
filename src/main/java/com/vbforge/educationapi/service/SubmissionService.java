@@ -8,6 +8,7 @@ import com.vbforge.educationapi.exception.ResourceNotFoundException;
 import com.vbforge.educationapi.mapper.SubmissionMapper;
 import com.vbforge.educationapi.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,6 +73,7 @@ public class SubmissionService {
     }
 
     // called by instructor to grade a submission
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     public SubmissionResponseDto grade(Long submissionId, BigDecimal score, String feedback) {
         Submission submission = getSubmissionOrThrow(submissionId);
 

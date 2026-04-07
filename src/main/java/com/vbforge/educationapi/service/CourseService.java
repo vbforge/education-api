@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -23,28 +24,32 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
 
-    // ── Read ────────────────────────────────────────────────────
+    // read
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('STUDENT', 'INSTRUCTOR', 'ADMIN')")
     public PageResponseDto<CourseResponseDto> findAll(Pageable pageable) {
         Page<Course> page = courseRepository.findAll(pageable);
         return toPageResponse(page);
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('STUDENT', 'INSTRUCTOR', 'ADMIN')")
     public PageResponseDto<CourseResponseDto> search(String keyword, Pageable pageable) {
         Page<Course> page = courseRepository.search(keyword, pageable);
         return toPageResponse(page);
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('STUDENT', 'INSTRUCTOR', 'ADMIN')")
     public CourseResponseDto findById(Long id) {
         Course course = getCourseOrThrow(id);
         return CourseMapper.toDto(course);
     }
 
-    // ── Write ───────────────────────────────────────────────────
+    // write
 
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     public CourseResponseDto create(CourseRequestDto dto) {
         if (courseRepository.existsByNameIgnoreCase(dto.getName())) {
             throw new DuplicateResourceException(
@@ -55,6 +60,7 @@ public class CourseService {
         return CourseMapper.toDto(courseRepository.save(course));
     }
 
+    @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
     public CourseResponseDto update(Long id, CourseRequestDto dto) {
         Course course = getCourseOrThrow(id);
 
@@ -71,6 +77,7 @@ public class CourseService {
         return CourseMapper.toDto(courseRepository.save(course));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(Long id) {
         if (!courseRepository.existsById(id)) {
             throw new ResourceNotFoundException("Course", id);
@@ -79,7 +86,7 @@ public class CourseService {
         // cascade = ALL on modules and enrollments handles children automatically
     }
 
-    // ── Private helpers ─────────────────────────────────────────
+    // helpers
 
     private Course getCourseOrThrow(Long id) {
         return courseRepository.findById(id)
