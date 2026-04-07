@@ -46,6 +46,10 @@ public class Assignment extends BaseEntity {
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Submission> submissions = new ArrayList<>();
+
+    public void setPossiblePoints(int i) {
+        this.pointsPossible = i;
+    }
 }
 
 
