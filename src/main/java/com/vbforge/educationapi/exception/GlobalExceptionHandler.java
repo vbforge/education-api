@@ -45,6 +45,15 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
+    // 500 — file storage failure
+    @ExceptionHandler(StorageException.class)
+    public ProblemDetail handleStorage(StorageException ex) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "File storage error: " + ex.getMessage()
+        );
+    }
+
     // 500 — catch-all for unexpected errors
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex) {

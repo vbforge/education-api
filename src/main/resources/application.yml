@@ -23,3 +23,8 @@ spring:
 server:
   port: 8080
 
+app:
+  storage:
+    upload-dir: uploads
+    allowed-extensions: pdf,doc,docx,txt,zip,png,jpg
+    max-file-size-bytes: 10485760   # 10MB

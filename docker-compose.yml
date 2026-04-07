@@ -20,6 +20,8 @@ services:
       retries: 5
 
   app:
+    volumes:
+      - uploads_data:/app/uploads
     build:
       context: .
       dockerfile: Dockerfile
@@ -37,3 +39,4 @@ services:
 
 volumes:
   mysql_data:
+  uploads_data:

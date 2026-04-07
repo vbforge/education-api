@@ -28,7 +28,7 @@ import java.util.List;
 public class StudentService {
 
     private final StudentRepository studentRepository;
-    private final PasswordEncoder passwordEncoder;   // injected from SecurityConfig later
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")

@@ -19,3 +19,7 @@ spring:
 logging:
   level:
     com.vbforge.educationapi: INFO
+
+app:
+  storage:
+    upload-dir: /app/uploads

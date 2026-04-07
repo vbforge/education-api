@@ -88,6 +88,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,    "/api/v1/students/**").authenticated()
                         .requestMatchers(HttpMethod.PUT,    "/api/v1/students/**").authenticated()
 
+                        // file downloads — authenticated users only
+                        .requestMatchers(HttpMethod.GET, "/api/v1/files/**").authenticated()
+
                         // ── Everything else requires login ───────────────
                         .anyRequest().authenticated()
                 )
@@ -96,7 +99,8 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")        // Spring handles POST /login
-                        .successHandler(successHandler())    // redirect by role after login
+                        //.successHandler(successHandler())    // redirect by role after login
+                        .defaultSuccessUrl("/api/v1/courses", true)
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )

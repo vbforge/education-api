@@ -45,3 +45,10 @@ application-local.yml
 .DS_Store
 Thumbs.db
 
+### uploads ###
+uploads/
+**/education-api-upload/
+
+### requests ###
+requests/
+

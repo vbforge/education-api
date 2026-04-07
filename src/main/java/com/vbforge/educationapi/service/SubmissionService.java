@@ -24,8 +24,9 @@ public class SubmissionService {
     private final SubmissionRepository submissionRepository;
     private final AssignmentRepository assignmentRepository;
     private final StudentRepository    studentRepository;
-    private final EnrollmentService    enrollmentService;   // for progress recalculation
+    private final ProgressService progressService;
     private final NotificationService notificationService;
+    private final StorageService storageService;
 
     @Transactional(readOnly = true)
     public List<SubmissionResponseDto> findByAssignment(Long assignmentId) {
@@ -99,9 +100,18 @@ public class SubmissionService {
 
         // recalculate student progress after grading
         Long courseId = submission.getAssignment().getModule().getCourse().getId();
-        enrollmentService.recalculateProgress(submission.getStudent().getId(), courseId);
+        progressService.recalculate(submission.getStudent().getId(), courseId);
 
         return SubmissionMapper.toDto(submission);
+    }
+
+    public void deleteFile(Long submissionId) {
+        Submission submission = getSubmissionOrThrow(submissionId);
+        if (submission.getFilePath() != null) {
+            storageService.delete(submission.getFilePath());
+            submission.setFilePath(null);
+            submissionRepository.save(submission);
+        }
     }
 
     private Submission getSubmissionOrThrow(Long id) {
