@@ -8,6 +8,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.MalformedURLException;
@@ -17,6 +18,7 @@ import java.nio.file.Path;
 @RestController
 @RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
+@Validated
 public class FileController {
 
     private final StorageService storageService;
