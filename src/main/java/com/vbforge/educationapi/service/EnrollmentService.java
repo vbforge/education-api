@@ -24,6 +24,8 @@ public class EnrollmentService {
     private final CourseRepository     courseRepository;
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
+    private final ProgressService progressService;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<EnrollmentResponseDto> findByStudent(Long studentId) {
@@ -68,7 +70,14 @@ public class EnrollmentService {
                 .course(course)
                 .build();
 
-        return EnrollmentMapper.toDto(enrollmentRepository.save(enrollment));
+
+        Enrollment saved = enrollmentRepository.save(enrollment);
+        notificationService.sendEnrollmentConfirmation(
+                student.getEmail(),
+                student.getName(),
+                course.getName()
+        );
+        return EnrollmentMapper.toDto(saved);
     }
 
     public EnrollmentResponseDto drop(Long studentId, Long courseId) {
@@ -80,20 +89,37 @@ public class EnrollmentService {
         return EnrollmentMapper.toDto(enrollmentRepository.save(enrollment));
     }
 
-    // called by SubmissionService after a submission is graded
+    // called by SubmissionService after grading
     public void recalculateProgress(Long studentId, Long courseId) {
+        progressService.recalculate(studentId, courseId);
+    }
+
+    // instructor manually finalizes a student's course grade
+    public EnrollmentResponseDto finalizeGrade(Long studentId, Long courseId) {
+        progressService.finalize(studentId, courseId);
+
+        Enrollment enrollment = enrollmentRepository
+                .findByStudentIdAndCourseId(studentId, courseId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Enrollment not found"
+                ));
+        return EnrollmentMapper.toDto(enrollment);
+    }
+
+    // update enrollment grade directly (instructor override)
+    public EnrollmentResponseDto updateGrade(Long studentId, Long courseId, BigDecimal grade) {
         Enrollment enrollment = enrollmentRepository
                 .findByStudentIdAndCourseId(studentId, courseId)
                 .orElseThrow(() -> new BusinessException("Enrollment not found"));
 
-        int totalAssignments = assignmentRepository.findByCourseId(courseId).size();
-        if (totalAssignments == 0) {
-            return;
+        if (grade.compareTo(BigDecimal.ZERO) < 0 ||
+                grade.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new BusinessException("Grade must be between 0 and 100");
         }
 
-        int graded = submissionRepository.countGradedByStudentAndCourse(studentId, courseId);
-        BigDecimal progress = BigDecimal.valueOf((double) graded / totalAssignments * 100);
-        enrollment.setProgressPct(progress);
-        enrollmentRepository.save(enrollment);
+        enrollment.setGrade(grade);
+        return EnrollmentMapper.toDto(enrollmentRepository.save(enrollment));
     }
+
+
 }

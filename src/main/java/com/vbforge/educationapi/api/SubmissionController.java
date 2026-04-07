@@ -1,7 +1,9 @@
 package com.vbforge.educationapi.api;
 
+import com.vbforge.educationapi.dto.submission.GradeRequestDto;
 import com.vbforge.educationapi.dto.submission.SubmissionRequestDto;
 import com.vbforge.educationapi.dto.submission.SubmissionResponseDto;
+import com.vbforge.educationapi.service.StorageService;
 import com.vbforge.educationapi.service.SubmissionService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -21,6 +23,7 @@ import java.util.List;
 public class SubmissionController {
 
     private final SubmissionService submissionService;
+    private final StorageService storageService;
 
     // GET /api/v1/submissions/assignment/{assignmentId}
     @GetMapping("/assignment/{assignmentId}")
@@ -51,9 +54,13 @@ public class SubmissionController {
             @Valid @ModelAttribute SubmissionRequestDto dto,
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        // file handling will be wired in Phase 4 (file upload)
-        // for now we pass null as filePath — service handles null safely
-        String filePath = null;
+        // file handling will be wired later (file upload)
+        // service handles null safely
+        String filePath = storageService.store(
+                file,
+                dto.getStudentId(),
+                dto.getAssignmentId()
+        );
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(submissionService.submit(dto, filePath));
@@ -63,10 +70,10 @@ public class SubmissionController {
     @PatchMapping("/{id}/grade")
     public ResponseEntity<SubmissionResponseDto> grade(
             @PathVariable Long id,
-            @RequestParam
-            @DecimalMin("0.0") @DecimalMax("100.0") BigDecimal score,
-            @RequestParam(required = false) String feedback
+            @Valid @RequestBody GradeRequestDto dto
     ) {
-        return ResponseEntity.ok(submissionService.grade(id, score, feedback));
+        return ResponseEntity.ok(
+                submissionService.grade(id, dto.getScore(), dto.getFeedback())
+        );
     }
 }

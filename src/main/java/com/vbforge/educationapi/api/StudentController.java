@@ -1,6 +1,7 @@
 package com.vbforge.educationapi.api;
 
 import com.vbforge.educationapi.dto.common.PageResponseDto;
+import com.vbforge.educationapi.dto.student.StudentProgressResponseDto;
 import com.vbforge.educationapi.dto.student.StudentRequestDto;
 import com.vbforge.educationapi.dto.student.StudentResponseDto;
 import com.vbforge.educationapi.service.StudentService;
@@ -70,5 +71,11 @@ public class StudentController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         studentService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // GET /api/v1/students/{id}/progress
+    @GetMapping("/{id}/progress")
+    public ResponseEntity<StudentProgressResponseDto> getProgress(@PathVariable Long id) {
+        return ResponseEntity.ok(studentService.getProgress(id));
     }
 }

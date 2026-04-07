@@ -1,11 +1,15 @@
 package com.vbforge.educationapi.service;
 
+import com.vbforge.educationapi.domain.EnrollmentStatus;
 import com.vbforge.educationapi.domain.Student;
 import com.vbforge.educationapi.dto.common.PageResponseDto;
+import com.vbforge.educationapi.dto.enrollment.EnrollmentResponseDto;
+import com.vbforge.educationapi.dto.student.StudentProgressResponseDto;
 import com.vbforge.educationapi.dto.student.StudentRequestDto;
 import com.vbforge.educationapi.dto.student.StudentResponseDto;
 import com.vbforge.educationapi.exception.DuplicateResourceException;
 import com.vbforge.educationapi.exception.ResourceNotFoundException;
+import com.vbforge.educationapi.mapper.EnrollmentMapper;
 import com.vbforge.educationapi.mapper.StudentMapper;
 import com.vbforge.educationapi.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
@@ -103,6 +107,34 @@ public class StudentService {
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())
                 .last(page.isLast())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public StudentProgressResponseDto getProgress(Long studentId) {
+        Student student = getStudentOrThrow(studentId);
+
+        List<EnrollmentResponseDto> enrollments =
+                student.getEnrollments()
+                        .stream()
+                        .map(EnrollmentMapper::toDto)
+                        .toList();
+
+        long completed = enrollments.stream()
+                .filter(e -> e.getStatus() == EnrollmentStatus.COMPLETED)
+                .count();
+
+        long active = enrollments.stream()
+                .filter(e -> e.getStatus() == EnrollmentStatus.ACTIVE)
+                .count();
+
+        return StudentProgressResponseDto.builder()
+                .studentId(studentId)
+                .studentName(student.getName())
+                .totalEnrollments(enrollments.size())
+                .completedCourses((int) completed)
+                .activeCourses((int) active)
+                .enrollments(enrollments)
                 .build();
     }
 }

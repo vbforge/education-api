@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -51,4 +52,37 @@ public class EnrollmentController {
     ) {
         return ResponseEntity.ok(enrollmentService.drop(studentId, courseId));
     }
+
+    // PATCH /api/v1/enrollments/finalize?studentId=1&courseId=2
+    @PatchMapping("/finalize")
+    public ResponseEntity<EnrollmentResponseDto> finalize(
+            @RequestParam Long studentId,
+            @RequestParam Long courseId
+    ) {
+        return ResponseEntity.ok(enrollmentService.finalizeGrade(studentId, courseId));
+    }
+
+    // PATCH /api/v1/enrollments/grade?studentId=1&courseId=2&grade=85.50
+    @PatchMapping("/grade")
+    public ResponseEntity<EnrollmentResponseDto> updateGrade(
+            @RequestParam Long studentId,
+            @RequestParam Long courseId,
+            @RequestParam BigDecimal grade
+    ) {
+        return ResponseEntity.ok(enrollmentService.updateGrade(studentId, courseId, grade));
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

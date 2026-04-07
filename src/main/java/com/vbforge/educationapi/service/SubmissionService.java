@@ -25,6 +25,7 @@ public class SubmissionService {
     private final AssignmentRepository assignmentRepository;
     private final StudentRepository    studentRepository;
     private final EnrollmentService    enrollmentService;   // for progress recalculation
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<SubmissionResponseDto> findByAssignment(Long assignmentId) {
@@ -88,6 +89,13 @@ public class SubmissionService {
         submission.setFeedback(feedback);
         submission.setStatus(SubmissionStatus.GRADED);
         submissionRepository.save(submission);
+
+        notificationService.sendGradeNotification(
+                submission.getStudent().getEmail(),
+                submission.getStudent().getName(),
+                submission.getAssignment().getTitle(),
+                score.toPlainString()
+        );
 
         // recalculate student progress after grading
         Long courseId = submission.getAssignment().getModule().getCourse().getId();
