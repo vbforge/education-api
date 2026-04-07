@@ -3,6 +3,11 @@ spring:
     active: local
   application:
     name: education-api
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
 
   # JPA common settings
   jpa:
