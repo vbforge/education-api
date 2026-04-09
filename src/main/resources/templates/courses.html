@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Courses - EduFlow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Apple-style glassmorphism navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.7;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-name {
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3a3a3a, #1a1a1a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #ff453a;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 69, 58, 0.1);
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Page header */
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: #86868b;
+            font-size: 16px;
+        }
+
+        /* Search bar */
+        .search-section {
+            margin-bottom: 32px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 12px;
+            max-width: 400px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #f5f5f7;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #0a84ff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .search-input::placeholder {
+            color: #5a5a5e;
+        }
+
+        /* Course cards (matching dashboard style) */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .course-card {
+            background: rgba(28, 28, 32, 0.8);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .course-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .course-banner {
+            height: 100px;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            position: relative;
+        }
+
+        .course-icon {
+            position: absolute;
+            bottom: -20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background: #0a84ff;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .course-content {
+            padding: 28px 20px 20px 20px;
+        }
+
+        .course-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .course-instructor {
+            font-size: 14px;
+            color: #0a84ff;
+            margin-bottom: 12px;
+        }
+
+        .course-description {
+            font-size: 14px;
+            color: #86868b;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .course-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #86868b;
+        }
+
+        .course-footer {
+            padding: 16px 0 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .status-enrolled {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+        }
+
+        .btn {
+            background: #0a84ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        /* Alert messages */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+            border: 1px solid rgba(52, 199, 89, 0.3);
+        }
+
+        .alert-error {
+            background: rgba(255, 69, 58, 0.15);
+            color: #ff453a;
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            color: #86868b;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+            .search-form {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/courses">Courses</a>
+        <div class="user-menu">
+            <span class="user-name" sec:authentication="name">User</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="logout-btn">Sign Out</button>
+            </form>
+            <div class="avatar">
+                <span sec:authentication="principal.username" th:text="${#strings.substring(#strings.toUpperCase(#authentication.name), 0, 1)}">U</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>Courses</h1>
+        <p>Discover and enroll in courses to advance your skills</p>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${message}" class="alert alert-success">
+        <span>✓</span>
+        <span th:text="${message}">Success message</span>
+    </div>
+    <div th:if="${error}" class="alert alert-error">
+        <span>⚠️</span>
+        <span th:text="${error}">Error message</span>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section">
+        <form th:action="@{/courses}" method="get" class="search-form">
+            <input type="text"
+                   name="keyword"
+                   th:value="${keyword}"
+                   placeholder="Search courses by name or instructor..."
+                   class="search-input">
+            <button type="submit" class="btn">🔍 Search</button>
+            <a th:if="${keyword != null}" href="/courses" class="btn btn-secondary">Clear</a>
+        </form>
+    </div>
+
+    <!-- Course Grid -->
+    <div th:if="${not #lists.isEmpty(courses)}" class="courses-grid">
+        <div th:each="course : ${courses}" class="course-card">
+            <div class="course-banner">
+                <div class="course-icon">📚</div>
+            </div>
+            <div class="course-content">
+                <div class="course-title" th:text="${course.name}">Course Name</div>
+                <div class="course-instructor" th:text="'👨‍🏫 ' + ${course.instructor}">Instructor</div>
+                <div class="course-description" th:text="${course.description}">Course description</div>
+
+                <div class="course-stats">
+                    <span>📦 <span th:text="${course.moduleCount}">0</span> modules</span>
+                    <span>👥 <span th:text="${course.enrollmentCount}">0</span> students</span>
+                </div>
+
+                <div class="course-footer">
+                    <div th:if="${course.enrolled}">
+                        <span class="status-badge status-enrolled">✓ Enrolled</span>
+                        <span th:text="'Progress: ' + ${course.progressPct} + '%'" style="font-size: 12px; color: #34c759;"></span>
+                    </div>
+                    <a th:if="${course.enrolled}" th:href="'/courses/' + ${course.id}" class="btn btn-secondary">Continue →</a>
+                    <form th:unless="${course.enrolled}" th:action="@{/enroll}" method="post" style="display: inline;">
+                        <input type="hidden" name="courseId" th:value="${course.id}">
+                        <button type="submit" class="btn">Enroll Now →</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(courses)}" class="empty-state">
+        <div class="empty-state-icon">📚</div>
+        <h3>No courses found</h3>
+        <p>Try a different search term or check back later for new courses.</p>
+    </div>
+
+    <!-- Pagination -->
+    <div th:if="${page != null and page.totalPages > 1}" class="pagination">
+        <a th:if="${page.page > 0}" th:href="'/courses?page=' + ${page.page - 1} + '&size=' + ${page.size} + (${keyword != null} ? '&keyword=' + ${keyword} : '')"
+           class="btn btn-secondary">← Previous</a>
+        <span style="padding: 10px 20px; color: #86868b;">
+                Page <span th:text="${page.page + 1}">1</span> of <span th:text="${page.totalPages}">1</span>
+            </span>
+        <a th:if="${page.page + 1 < page.totalPages}" th:href="'/courses?page=' + ${page.page + 1} + '&size=' + ${page.size} + (${keyword != null} ? '&keyword=' + ${keyword} : '')"
+           class="btn btn-secondary">Next →</a>
+    </div>
+</div>
+
+<script>
+    // Auto-hide alerts after 5 seconds
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(alert => {
+            alert.style.transition = 'opacity 0.3s';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        });
+    }, 5000);
+</script>
+</body>
+</html>

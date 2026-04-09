@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title th:text="${course.name} + ' - EduFlow'">Course - EduFlow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Apple-style glassmorphism navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.7;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-name {
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3a3a3a, #1a1a1a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #ff453a;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 69, 58, 0.1);
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #0a84ff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 0.7;
+        }
+
+        /* Course Hero */
+        .course-hero {
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .course-title {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+
+        .course-meta {
+            display: flex;
+            gap: 24px;
+            color: #86868b;
+            font-size: 14px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .course-description {
+            color: #a1a1a6;
+            line-height: 1.6;
+            max-width: 700px;
+        }
+
+        /* Two column layout */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 40px;
+        }
+
+        /* Module cards */
+        .modules-section h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .module-card {
+            background: rgba(28, 28, 32, 0.6);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .module-header {
+            padding: 20px 24px;
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .module-header:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .module-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .module-toggle {
+            color: #86868b;
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+
+        .module-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .assignments-list {
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: none;
+        }
+
+        .assignments-list.show {
+            display: block;
+        }
+
+        .assignment-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            transition: background 0.2s;
+        }
+
+        .assignment-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .assignment-row:last-child {
+            border-bottom: none;
+        }
+
+        .assignment-name {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .assignment-due {
+            font-size: 12px;
+            color: #86868b;
+        }
+
+        .assignment-points {
+            font-size: 13px;
+            color: #86868b;
+        }
+
+        /* Status chips */
+        .status-chip {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .status-submitted {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+        }
+
+        .status-pending {
+            background: rgba(255, 159, 10, 0.15);
+            color: #ff9f0a;
+        }
+
+        .status-graded {
+            background: rgba(10, 132, 255, 0.15);
+            color: #0a84ff;
+        }
+
+        /* Sidebar cards */
+        .sidebar-card {
+            background: rgba(28, 28, 32, 0.6);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .sidebar-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0a84ff, #5e5ce0);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .grade-display {
+            font-size: 36px;
+            font-weight: 700;
+            color: #34c759;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: #86868b;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 14px;
+        }
+
+        /* Buttons */
+        .btn {
+            background: #0a84ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #0a84ff;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.8;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+            border: 1px solid rgba(52, 199, 89, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+            .course-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+    <div class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/courses">Courses</a>
+        <div class="user-menu">
+            <span class="user-name" sec:authentication="name">User</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="logout-btn">Sign Out</button>
+            </form>
+            <div class="avatar">
+                <span sec:authentication="principal.username" th:text="${#strings.substring(#strings.toUpperCase(#authentication.name), 0, 1)}">U</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="/courses" class="back-link">← Back to Courses</a>
+
+    <div th:if="${message}" class="alert alert-success">
+        <span>✓</span>
+        <span th:text="${message}">Success message</span>
+    </div>
+
+    <!-- Course Hero -->
+    <div class="course-hero">
+        <h1 class="course-title" th:text="${course.name}">Course Name</h1>
+        <div class="course-meta">
+            <span th:text="'👨‍🏫 ' + ${course.instructor}">Instructor</span>
+            <span th:text="'📦 ' + ${moduleCount} + ' modules'">Modules</span>
+            <span th:text="'👥 ' + ${enrollmentCount} + ' students'">Students</span>
+        </div>
+        <p class="course-description" th:text="${course.description}">Course description</p>
+    </div>
+
+    <div class="two-column">
+        <!-- Modules & Assignments -->
+        <div class="modules-section">
+            <h2>Course Content</h2>
+
+            <div th:each="module : ${modules}" class="module-card">
+                <div class="module-header" th:onclick="'toggleModule(' + ${module.id} + ')'">
+                    <span class="module-title" th:text="${module.title}">Module Title</span>
+                    <span class="module-toggle" th:id="'toggle-' + ${module.id}">▼</span>
+                </div>
+                <div class="assignments-list" th:id="'assignments-' + ${module.id}">
+                    <div th:each="assignment : ${module.assignments}" class="assignment-row">
+                        <div>
+                            <div class="assignment-name" th:text="${assignment.title}">Assignment Title</div>
+                            <div class="assignment-due" th:text="'Due: ' + ${#temporals.format(assignment.dueDate, 'MMM dd, yyyy • hh:mm a')}">Due Date</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="assignment-points" th:text="${assignment.pointsPossible} + ' pts'">100 pts</div>
+                            <div th:if="${assignment.status == 'SUBMITTED'}" class="status-chip status-submitted">✓ Submitted</div>
+                            <div th:if="${assignment.status == 'GRADED'}" class="status-chip status-graded" th:text="'⭐ ' + ${assignment.score} + '/100'">Graded</div>
+                            <div th:if="${assignment.status == 'PENDING'}" class="status-chip status-pending">⏳ Pending</div>
+                            <a th:if="${assignment.status != 'SUBMITTED' and assignment.status != 'GRADED'}"
+                               th:href="'/assignments/' + ${assignment.id} + '/submit'"
+                               class="btn btn-primary" style="padding: 6px 16px; font-size: 12px; margin-top: 8px; display: inline-block;">
+                                Submit →
+                            </a>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(module.assignments)}" style="padding: 24px; text-align: center; color: #86868b;">
+                        No assignments yet
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(modules)}" style="text-align: center; padding: 60px 20px;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                <h3>No modules yet</h3>
+                <p style="color: #86868b;">This course doesn't have any modules yet.</p>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <div class="sidebar-card">
+                <h3>📊 Your Progress</h3>
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span>Course Completion</span>
+                        <span th:text="${progressPct} + '%'">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" th:style="'width: ' + ${progressPct} + '%'"></div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 14px; color: #86868b;">Current Grade</div>
+                    <div class="grade-display" th:text="${grade != null ? grade + '%' : 'N/A'}">N/A</div>
+                </div>
+            </div>
+
+            <div class="sidebar-card">
+                <h3>📋 Course Info</h3>
+                <div class="info-row">
+                    <div class="info-label">Syllabus</div>
+                    <div class="info-value" th:text="${course.syllabus != null ? course.syllabus : 'Not available'}">Not available</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Schedule</div>
+                    <div class="info-value" th:text="${course.schedule != null ? course.schedule : 'Not available'}">Not available</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleModule(moduleId) {
+        const assignments = document.getElementById('assignments-' + moduleId);
+        const toggle = document.getElementById('toggle-' + moduleId);
+
+        if (assignments.classList.contains('show')) {
+            assignments.classList.remove('show');
+            toggle.classList.remove('open');
+        } else {
+            assignments.classList.add('show');
+            toggle.classList.add('open');
+        }
+    }
+
+    // Auto-hide alerts after 5 seconds
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(alert => {
+            alert.style.transition = 'opacity 0.3s';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        });
+    }, 5000);
+</script>
+</body>
+</html>
