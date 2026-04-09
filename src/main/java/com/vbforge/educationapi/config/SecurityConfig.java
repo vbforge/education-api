@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity          // enables @PreAuthorize on service/controller methods
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -45,79 +45,53 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // disable CSRF for REST API calls from Postman / HTTP client
-                // we will re-enable it for Thymeleaf forms in Phase 5
-                .csrf(AbstractHttpConfigurer::disable)
-
-                .authorizeHttpRequests(auth -> auth
-
-                        // ── Public ──────────────────────────────────────
-                        .requestMatchers(HttpMethod.POST, "/api/v1/students/register").permitAll()
-                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()   // dev only
-
-                        // ── Courses: read = anyone logged in ────────────
-                        .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/modules/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/assignments/**").authenticated()
-
-                        // ── Courses: write = INSTRUCTOR or ADMIN ────────
-                        .requestMatchers(HttpMethod.POST,   "/api/v1/courses/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT,    "/api/v1/courses/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/courses/**").hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.POST,   "/api/v1/modules/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT,    "/api/v1/modules/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/modules/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-
-                        .requestMatchers(HttpMethod.POST,   "/api/v1/assignments/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT,    "/api/v1/assignments/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/assignments/**").hasAnyRole("INSTRUCTOR", "ADMIN")
-
-                        // ── Enrollments ──────────────────────────────────
-                        .requestMatchers("/api/v1/enrollments/**").authenticated()
-
-                        // ── Submissions ──────────────────────────────────
-                        .requestMatchers(HttpMethod.POST,  "/api/v1/submissions/**").hasRole("STUDENT")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/submissions/*/grade").hasAnyRole("INSTRUCTOR", "ADMIN")
-                        .requestMatchers(HttpMethod.GET,   "/api/v1/submissions/**").authenticated()
-
-                        // ── Students: admin only for list/delete ─────────
-                        .requestMatchers(HttpMethod.GET,    "/api/v1/students").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/students/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET,    "/api/v1/students/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT,    "/api/v1/students/**").authenticated()
-
-                        // file downloads — authenticated users only
-                        .requestMatchers(HttpMethod.GET, "/api/v1/files/**").authenticated()
-
-                        // ── Everything else requires login ───────────────
-                        .anyRequest().authenticated()
-                )
-
-                // ── Form login (for Thymeleaf UI) ───────────────────
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")        // Spring handles POST /login
-                        //.successHandler(successHandler())    // redirect by role after login
-                        .defaultSuccessUrl("/api/v1/courses", true)
-                        .failureUrl("/login?error=true")
-                        .permitAll()
-                )
-
-                // ── Logout ───────────────────────────────────────────
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout=true")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                        .permitAll()
-                )
-
-                // ── H2 console fix (dev only) ─────────────────────
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                );
+            .authenticationProvider(authenticationProvider())
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.POST, "/api/v1/students/register").permitAll()
+                .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/", "/dashboard", "/courses/**", "/assignments/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/modules/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/assignments/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/courses/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/courses/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/courses/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/modules/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/modules/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/modules/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/assignments/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/assignments/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/assignments/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers("/api/v1/enrollments/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/submissions/**").hasRole("STUDENT")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/submissions/*/grade").hasAnyRole("INSTRUCTOR", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/submissions/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/students").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/students/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/students/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/v1/students/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/files/**").authenticated()
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/login")
+                .successHandler(successHandler())
+                .failureUrl("/login?error=true")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            )
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+            );
 
         return http.build();
     }
@@ -125,7 +99,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationSuccessHandler successHandler() {
         return (request, response, authentication) -> {
-            boolean isAdmin      = authentication.getAuthorities().stream()
+            boolean isAdmin = authentication.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
             boolean isInstructor = authentication.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_INSTRUCTOR"));
@@ -135,29 +109,8 @@ public class SecurityConfig {
             } else if (isInstructor) {
                 response.sendRedirect("/instructor/dashboard");
             } else {
-                response.sendRedirect("/student/dashboard");
+                response.sendRedirect("/dashboard");
             }
         };
     }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

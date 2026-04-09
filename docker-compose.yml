@@ -37,6 +37,14 @@ services:
       DB_USERNAME: ${DB_USERNAME:-educationapi}
       DB_PASSWORD: ${DB_PASSWORD:-educationapi}
 
+  mailhog:
+    image: mailhog/mailhog
+    container_name: educationapi_mailhog
+    ports:
+      - "1025:1025"    # SMTP — app sends here
+      - "8025:8025"    # Web UI — you view emails here
+    restart: unless-stopped
+
 volumes:
   mysql_data:
   uploads_data:

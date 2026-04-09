@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="header">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title th:text="${title} ?: 'Education API'">EduFlow - Education Platform</title>
+
+    <!-- Apple-style fonts -->
+    <link href="https://fonts.cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Apple-style glassmorphism navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.7;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-name {
+            font-size: 14px;
+            color: #86868b;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3a3a3a, #1a1a1a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #ff453a;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 69, 58, 0.1);
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* Apple-style cards */
+        .card {
+            background: rgba(28, 28, 32, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #0a84ff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0063ce;
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .status-badge {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 12px 16px;
+            }
+            .nav-links {
+                gap: 16px;
+            }
+            .container {
+                padding: 20px 16px;
+            }
+            .user-name {
+                display: none;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: #86868b;
+            font-size: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 48px;
+        }
+    </style>
+</head>
+<body th:fragment="body">
+
+<!-- Navigation Bar -->
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+
+    <div class="nav-links" sec:authorize="isAuthenticated()">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/courses">Courses</a>
+        <a href="/assignments">Assignments</a>
+        <a href="/grades">Grades</a>
+
+        <div sec:authorize="hasRole('INSTRUCTOR')">
+            <a href="/instructor/courses">My Teaching</a>
+        </div>
+
+        <div sec:authorize="hasRole('ADMIN')">
+            <a href="/admin/users">Admin</a>
+        </div>
+    </div>
+
+    <div class="user-menu">
+        <div sec:authorize="isAuthenticated()">
+            <span class="user-name" sec:authentication="name">User</span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="logout-btn">Sign Out</button>
+            </form>
+        </div>
+        <div sec:authorize="!isAuthenticated()">
+            <a href="/login" class="btn btn-primary">Sign In</a>
+        </div>
+        <div class="avatar">
+            <span sec:authentication="principal.username" th:text="${#strings.substring(#strings.toUpperCase(#authentication.name), 0, 1)}">U</span>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="container">
+    <div th:replace="~{${page} :: content}"></div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <p>&copy; 2026 Education API. All rights reserved. Designed with ❤️ for education.</p>
+</footer>
+
+</body>
+</html>

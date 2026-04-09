@@ -147,4 +147,13 @@ public class StudentService {
                 .enrollments(enrollments)
                 .build();
     }
+
+    //--------------------------- web ---------------------------------------
+
+
+    public Student getStudentOrThrowByEmail(String email) {
+        return studentRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Student with email: " + email));
+    }
+
 }

@@ -1,18 +1,28 @@
 package com.vbforge.educationapi.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
 
     private final JavaMailSender mailSender;
+    private final boolean mailEnabled;
+
+    // Spring injects Optional<JavaMailSender> — empty if no mail config present
+    public NotificationService(Optional<JavaMailSender> mailSender) {
+        this.mailSender  = mailSender.orElse(null);
+        this.mailEnabled = mailSender.isPresent();
+        if (!mailEnabled) {
+            log.warn("JavaMailSender not configured — email notifications are disabled");
+        }
+    }
 
     // ── Enrollment confirmation ──────────────────────────────────
 
@@ -100,6 +110,12 @@ public class NotificationService {
     // ── Private helper ───────────────────────────────────────────
 
     private void sendEmail(String to, String subject, String body) {
+
+        if (!mailEnabled) {
+            log.debug("Mail disabled — skipping email to {}: {}", to, subject);
+            return;
+        }
+
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);
