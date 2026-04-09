@@ -44,7 +44,9 @@ public class CourseService {
     @PreAuthorize("hasAnyRole('STUDENT', 'INSTRUCTOR', 'ADMIN')")
     public CourseResponseDto findById(Long id) {
         Course course = getCourseOrThrow(id);
-        return CourseMapper.toDto(course);
+        int modulesByCourseId = courseRepository.countModulesByCourseId(id);
+        int enrollmentsByCourseId = courseRepository.countEnrollmentsByCourseId(id);
+        return CourseMapper.toDto(course, modulesByCourseId, enrollmentsByCourseId);
     }
 
     // write
@@ -57,7 +59,8 @@ public class CourseService {
             );
         }
         Course course = CourseMapper.toEntity(dto);
-        return CourseMapper.toDto(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        return CourseMapper.toDto(saved, 0, 0);
     }
 
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
@@ -74,7 +77,11 @@ public class CourseService {
         }
 
         CourseMapper.updateEntity(course, dto);
-        return CourseMapper.toDto(courseRepository.save(course));
+        Course updated = courseRepository.save(course);
+        int moduleCount = courseRepository.countModulesByCourseId(id);
+        int enrollmentCount = courseRepository.countEnrollmentsByCourseId(id);
+
+        return CourseMapper.toDto(updated, moduleCount, enrollmentCount);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -86,6 +93,7 @@ public class CourseService {
         // cascade = ALL on modules and enrollments handles children automatically
     }
 
+
     // helpers
 
     private Course getCourseOrThrow(Long id) {
@@ -96,8 +104,13 @@ public class CourseService {
     private PageResponseDto<CourseResponseDto> toPageResponse(Page<Course> page) {
         List<CourseResponseDto> content = page.getContent()
                 .stream()
-                .map(CourseMapper::toDto)
+                .map(course ->{
+                    int modulesByCourseId = courseRepository.countModulesByCourseId(course.getId());
+                    int enrollmentsByCourseId = courseRepository.countEnrollmentsByCourseId(course.getId());
+                    return CourseMapper.toDto(course, modulesByCourseId, enrollmentsByCourseId);
+                })
                 .toList();
+
         return PageResponseDto.<CourseResponseDto>builder()
                 .content(content)
                 .page(page.getNumber())

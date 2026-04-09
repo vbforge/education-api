@@ -29,7 +29,10 @@ public class AssignmentService {
         }
         return assignmentRepository.findByModuleIdOrderByDueDateAsc(moduleId)
                 .stream()
-                .map(AssignmentMapper::toDto)
+                .map(assignment -> {
+                    int submissionCount = assignmentRepository.countSubmissionsByAssignmentId(assignment.getId());
+                    return AssignmentMapper.toDto(assignment, submissionCount);
+                })
                 .toList();
     }
 
@@ -37,13 +40,18 @@ public class AssignmentService {
     public List<AssignmentResponseDto> findByCourse(Long courseId) {
         return assignmentRepository.findByCourseId(courseId)
                 .stream()
-                .map(AssignmentMapper::toDto)
+                .map(assignment -> {
+                    int submissionCount = assignmentRepository.countSubmissionsByAssignmentId(assignment.getId());
+                    return AssignmentMapper.toDto(assignment, submissionCount);
+                })
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public AssignmentResponseDto findById(Long id) {
-        return AssignmentMapper.toDto(getAssignmentOrThrow(id));
+        Assignment assignment = getAssignmentOrThrow(id);
+        int submissionCount = assignmentRepository.countSubmissionsByAssignmentId(id);
+        return AssignmentMapper.toDto(assignment, submissionCount);
     }
 
     public AssignmentResponseDto create(AssignmentRequestDto dto) {
@@ -58,13 +66,16 @@ public class AssignmentService {
                 .pointsPossible(dto.getPointsPossible() != null ? dto.getPointsPossible() : 100)
                 .build();
 
-        return AssignmentMapper.toDto(assignmentRepository.save(assignment));
+        Assignment saved = assignmentRepository.save(assignment);
+        return AssignmentMapper.toDto(saved, 0);
     }
 
     public AssignmentResponseDto update(Long id, AssignmentRequestDto dto) {
         Assignment assignment = getAssignmentOrThrow(id);
         AssignmentMapper.updateEntity(assignment, dto);
-        return AssignmentMapper.toDto(assignmentRepository.save(assignment));
+        Assignment updated = assignmentRepository.save(assignment);
+        int submissionCount = assignmentRepository.countSubmissionsByAssignmentId(id);
+        return AssignmentMapper.toDto(updated, submissionCount);
     }
 
     public void delete(Long id) {

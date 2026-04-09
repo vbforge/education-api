@@ -8,7 +8,7 @@ public class ModuleMapper {
 
     private ModuleMapper() {}
 
-    public static ModuleResponseDto toDto(Module module) {
+    public static ModuleResponseDto toDto(Module module, int assignmentCount) {
         return ModuleResponseDto.builder()
                 .id(module.getId())
                 .courseId(module.getCourse().getId())
@@ -16,7 +16,7 @@ public class ModuleMapper {
                 .title(module.getTitle())
                 .content(module.getContent())
                 .orderIndex(module.getOrderIndex())
-                .assignmentCount(module.getAssignments().size())
+                .assignmentCount(assignmentCount)
                 .createdAt(module.getCreatedAt())
                 .updatedAt(module.getUpdatedAt())
                 .build();

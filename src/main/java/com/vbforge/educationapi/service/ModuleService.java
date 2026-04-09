@@ -31,13 +31,18 @@ public class ModuleService {
         }
         return moduleRepository.findByCourseIdOrderByOrderIndexAsc(courseId)
                 .stream()
-                .map(ModuleMapper::toDto)
+                .map(module -> {
+                    int assignmentCount = moduleRepository.countAssignmentsByModuleId(module.getId());
+                    return ModuleMapper.toDto(module, assignmentCount);
+                })
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ModuleResponseDto findById(Long id) {
-        return ModuleMapper.toDto(getModuleOrThrow(id));
+        Module module = getModuleOrThrow(id);
+        int assignmentCount = moduleRepository.countAssignmentsByModuleId(id);
+        return ModuleMapper.toDto(module, assignmentCount);
     }
 
     public ModuleResponseDto create(ModuleRequestDto dto) {
@@ -57,7 +62,8 @@ public class ModuleService {
                 .orderIndex(dto.getOrderIndex() != null ? dto.getOrderIndex() : 0)
                 .build();
 
-        return ModuleMapper.toDto(moduleRepository.save(module));
+        Module saved = moduleRepository.save(module);
+        return ModuleMapper.toDto(saved, 0);
     }
 
     public ModuleResponseDto update(Long id, ModuleRequestDto dto) {
@@ -73,7 +79,9 @@ public class ModuleService {
         }
 
         ModuleMapper.updateEntity(module, dto);
-        return ModuleMapper.toDto(moduleRepository.save(module));
+        Module updated = moduleRepository.save(module);
+        int assignmentCount = moduleRepository.countAssignmentsByModuleId(id);
+        return ModuleMapper.toDto(updated, assignmentCount);
     }
 
     public void delete(Long id) {

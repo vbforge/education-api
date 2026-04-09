@@ -8,7 +8,7 @@ public class CourseMapper {
 
     private CourseMapper() {}   // utility class — no instances
 
-    public static CourseResponseDto toDto(Course course) {
+    public static CourseResponseDto toDto(Course course, int moduleCount, int enrollmentCount) {
         return CourseResponseDto.builder()
                 .id(course.getId())
                 .name(course.getName())
@@ -16,8 +16,8 @@ public class CourseMapper {
                 .instructor(course.getInstructor())
                 .syllabus(course.getSyllabus())
                 .schedule(course.getSchedule())
-                .moduleCount(course.getModules().size())
-                .enrollmentCount(course.getEnrollments().size())
+                .moduleCount(moduleCount)
+                .enrollmentCount(enrollmentCount)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();

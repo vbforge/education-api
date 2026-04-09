@@ -25,4 +25,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     // check if a course name already exists — for validation
     boolean existsByNameIgnoreCase(String name);
 
+    @Query("SELECT COUNT(m) FROM Module m WHERE m.course.id = :courseId")
+    int countModulesByCourseId(@Param("courseId") Long courseId);
+
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.course.id = :courseId")
+    int countEnrollmentsByCourseId(@Param("courseId") Long courseId);
+
 }

@@ -8,7 +8,7 @@ public class AssignmentMapper {
 
     private AssignmentMapper() {}
 
-    public static AssignmentResponseDto toDto(Assignment assignment) {
+    public static AssignmentResponseDto toDto(Assignment assignment, int submissionCount) {
         return AssignmentResponseDto.builder()
                 .id(assignment.getId())
                 .moduleId(assignment.getModule().getId())
@@ -18,7 +18,7 @@ public class AssignmentMapper {
                 .description(assignment.getDescription())
                 .dueDate(assignment.getDueDate())
                 .pointsPossible(assignment.getPointsPossible())
-                .submissionCount(assignment.getSubmissions().size())
+                .submissionCount(submissionCount)
                 .createdAt(assignment.getCreatedAt())
                 .updatedAt(assignment.getUpdatedAt())
                 .build();

@@ -34,4 +34,9 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
             @Param("deadline") LocalDateTime deadline
     );
 
+    @Query("SELECT COUNT(s) FROM Submission s WHERE s.assignment.id = :assignmentId")
+    int countSubmissionsByAssignmentId(@Param("assignmentId") Long assignmentId);
+
+
+
 }

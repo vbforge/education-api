@@ -27,4 +27,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             """)
     Page<Student> search(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.student.id = :studentId")
+    int countEnrollmentsByStudentId(@Param("studentId") Long studentId);
+
 }

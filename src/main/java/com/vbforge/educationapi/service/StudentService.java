@@ -45,7 +45,9 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public StudentResponseDto findById(Long id) {
-        return StudentMapper.toDto(getStudentOrThrow(id));
+        Student student = getStudentOrThrow(id);
+        int enrollmentCount = studentRepository.countEnrollmentsByStudentId(id);
+        return StudentMapper.toDto(student, enrollmentCount);
     }
 
     public StudentResponseDto register(StudentRequestDto dto) {
@@ -57,10 +59,11 @@ public class StudentService {
         Student student = Student.builder()
                 .name(dto.getName())
                 .email(dto.getEmail())
-                .passwordHash(passwordEncoder.encode(dto.getPassword()))  // hash here!
+                .passwordHash(passwordEncoder.encode(dto.getPassword()))
                 .build();
 
-        return StudentMapper.toDto(studentRepository.save(student));
+        Student saved = studentRepository.save(student);
+        return StudentMapper.toDto(saved, 0);
     }
 
     public StudentResponseDto update(Long id, StudentRequestDto dto) {
@@ -79,7 +82,10 @@ public class StudentService {
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             student.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         }
-        return StudentMapper.toDto(studentRepository.save(student));
+
+        Student updated = studentRepository.save(student);
+        int enrollmentCount = studentRepository.countEnrollmentsByStudentId(id);
+        return StudentMapper.toDto(updated, enrollmentCount);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -98,8 +104,12 @@ public class StudentService {
     private PageResponseDto<StudentResponseDto> toPageResponse(Page<Student> page) {
         List<StudentResponseDto> content = page.getContent()
                 .stream()
-                .map(StudentMapper::toDto)
+                .map(student -> {
+                    int enrollmentCount = studentRepository.countEnrollmentsByStudentId(student.getId());
+                    return StudentMapper.toDto(student, enrollmentCount);
+                })
                 .toList();
+
         return PageResponseDto.<StudentResponseDto>builder()
                 .content(content)
                 .page(page.getNumber())
