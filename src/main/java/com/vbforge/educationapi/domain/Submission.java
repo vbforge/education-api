@@ -46,4 +46,8 @@ public class Submission extends BaseEntity{
     @Builder.Default
     private SubmissionStatus status = SubmissionStatus.PENDING;
 
+    public String getStudentName() {
+        return student.getName();
+    }
+
 }
