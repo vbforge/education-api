@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - EduFlow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff, #86868b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-links a { color: #f5f5f7; text-decoration: none; font-size: 14px; }
+        .user-menu { display: flex; align-items: center; gap: 16px; }
+        .avatar {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #3a3a3a, #1a1a1a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .logout-btn {
+            background: none; border: none;
+            color: #ff453a; cursor: pointer;
+            font-size: 14px; padding: 8px 16px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .page-header h1 { font-size: 32px; }
+        .btn {
+            background: #0a84ff; color: white; border: none;
+            padding: 10px 20px; border-radius: 12px;
+            font-size: 14px; cursor: pointer; text-decoration: none;
+        }
+        .btn-danger { background: rgba(255,69,58,0.15); color: #ff453a; }
+        .btn-secondary { background: rgba(255,255,255,0.1); }
+        .search-form { display: flex; gap: 12px; margin-bottom: 24px; }
+        .search-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 10px 16px;
+            color: white;
+            width: 300px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(28,28,32,0.6);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        th { background: rgba(255,255,255,0.05); font-weight: 600; }
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .role-admin { background: rgba(255,69,58,0.15); color: #ff453a; }
+        .role-instructor { background: rgba(10,132,255,0.15); color: #0a84ff; }
+        .role-student { background: rgba(52,199,89,0.15); color: #34c759; }
+        .action-buttons { display: flex; gap: 8px; }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .alert {
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+        }
+        .alert-success { background: rgba(52,199,89,0.15); color: #34c759; }
+        .alert-error { background: rgba(255,69,58,0.15); color: #ff453a; }
+        @media (max-width: 768px) {
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            td { display: flex; justify-content: space-between; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+    <div class="nav-links">
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/courses">Courses</a>
+        <div class="user-menu">
+            <span sec:authentication="name" style="color: #86868b;"></span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="logout-btn">Sign Out</button>
+            </form>
+            <div class="avatar">A</div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1>Manage Users</h1>
+        <a href="/admin/users/create" class="btn">+ Add New User</a>
+    </div>
+
+    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+    <form th:action="@{/admin/users}" method="get" class="search-form">
+        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search by name or email..." class="search-input">
+        <button type="submit" class="btn btn-secondary">Search</button>
+        <a th:if="${keyword}" href="/admin/users" class="btn btn-secondary">Clear</a>
+    </form>
+
+    <table>
+        <thead>
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Enrollments</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${users}">
+            <td th:text="${user.name}">Name</td>
+            <td th:text="${user.email}">Email</td>
+            <td>
+                        <span class="role-badge" th:classappend="${user.role == 'ADMIN'} ? 'role-admin' : (${user.role == 'INSTRUCTOR'} ? 'role-instructor' : 'role-student')"
+                              th:text="${user.role}">ROLE</span>
+            </td>
+            <td th:text="${user.enrollmentCount}">0</td>
+            <td class="action-buttons">
+                <a th:href="'/admin/users/' + ${user.id} + '/edit'" class="btn btn-secondary" style="padding: 6px 12px;">Edit</a>
+                <form th:action="'/admin/users/' + ${user.id} + '/delete'" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" style="padding: 6px 12px;" onclick="return confirm('Delete this user?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(users)}">
+            <td colspan="5" style="text-align: center; padding: 60px;">No users found</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div th:if="${page != null and page.totalPages > 1}" class="pagination">
+        <a th:if="${page.page > 0}" th:href="'/admin/users?page=' + ${page.page - 1} + '&size=' + ${page.size} + (${keyword != null} ? '&keyword=' + ${keyword} : '')"
+           class="btn btn-secondary">← Previous</a>
+        <span style="padding: 10px 20px;">Page <span th:text="${page.page + 1}">1</span> of <span th:text="${page.totalPages}">1</span></span>
+        <a th:if="${page.page + 1 < page.totalPages}" th:href="'/admin/users?page=' + ${page.page + 1} + '&size=' + ${page.size} + (${keyword != null} ? '&keyword=' + ${keyword} : '')"
+           class="btn btn-secondary">Next →</a>
+    </div>
+</div>
+</body>
+</html>

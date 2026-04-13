@@ -316,8 +316,8 @@
                     <span>⏳ <span th:text="${course.pendingSubmissions}">0</span> to grade</span>
                 </div>
                 <div class="course-actions">
-                    <a th:href="'/instructor/courses/' + ${course.id}" class="btn btn-secondary" style="flex: 1; text-align: center;">Manage</a>
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn btn-primary" style="flex: 1; text-align: center;">Grade</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary" style="flex: 1; text-align: center;">Manage Course →</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn btn-primary" style="flex: 1; text-align: center;">Grade Submissions</a>
                 </div>
             </div>
         </div>

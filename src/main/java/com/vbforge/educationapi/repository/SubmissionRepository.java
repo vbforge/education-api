@@ -52,4 +52,29 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             @Param("courseId") Long courseId
     );
 
+
+    @Query("SELECT s FROM Submission s WHERE s.assignment.module.course.id = :courseId AND s.status = 'SUBMITTED'")
+    List<Submission> findPendingByCourseId(@Param("courseId") Long courseId);
+
+    @Query(value = "SELECT s.id, a.title as assignment_title, st.name as student_name, s.submitted_at " +
+            "FROM submissions s " +
+            "JOIN assignments a ON a.id = s.assignment_id " +
+            "JOIN modules m ON m.id = a.module_id " +
+            "JOIN courses c ON c.id = m.course_id " +
+            "JOIN students st ON st.id = s.student_id " +
+            "WHERE c.id = :courseId AND s.status = 'SUBMITTED'",
+            nativeQuery = true)
+    List<Object[]> findPendingSubmissionsByCourseIdNative(@Param("courseId") Long courseId);
+
+    @Query(value = "SELECT s.id, a.title as assignment_title, a.points_possible, st.name as student_name, " +
+            "c.name as course_name, c.id as course_id, s.submitted_at, s.file_path, s.score, s.feedback " +
+            "FROM submissions s " +
+            "JOIN assignments a ON a.id = s.assignment_id " +
+            "JOIN modules m ON m.id = a.module_id " +
+            "JOIN courses c ON c.id = m.course_id " +
+            "JOIN students st ON st.id = s.student_id " +
+            "WHERE s.id = :submissionId",
+            nativeQuery = true)
+    List<Object[]> findSubmissionByIdNative(@Param("submissionId") Long submissionId);
+
 }

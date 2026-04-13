@@ -371,7 +371,7 @@
                 </div>
             </div>
             <div class="course-footer">
-                <a th:href="'/instructor/courses/' + ${course.id}" class="btn btn-secondary">Manage Course →</a>
+                <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary">Manage Course →</a>
                 <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn">Grade Submissions</a>
             </div>
         </div>
@@ -384,7 +384,6 @@
         </div>
     </div>
 
-    <!-- Pending Submissions -->
     <div class="section-header">
         <h2>Pending Grading</h2>
         <a href="/instructor/grading">View all →</a>

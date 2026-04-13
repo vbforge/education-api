@@ -48,9 +48,26 @@ public class SecurityConfig {
             .authenticationProvider(authenticationProvider())
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+
                 .requestMatchers(HttpMethod.POST, "/api/v1/students/register").permitAll()
-                .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
+
+                    // Public
+                    .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                    .requestMatchers("/h2-console/**").permitAll()
+
+                    // Student endpoints
+                    .requestMatchers("/student/**").hasRole("STUDENT")
+
+                    // Instructor endpoints
+                    .requestMatchers("/instructor/**").hasAnyRole("INSTRUCTOR", "ADMIN")
+
+                    // Admin endpoints
+                    .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                    // API endpoints (keep existing)
+                    .requestMatchers(HttpMethod.POST, "/api/v1/students/register").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").authenticated()
+
                 .requestMatchers("/", "/dashboard", "/courses/**", "/assignments/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/modules/**").authenticated()
@@ -109,7 +126,7 @@ public class SecurityConfig {
             } else if (isInstructor) {
                 response.sendRedirect("/instructor/dashboard");
             } else {
-                response.sendRedirect("/dashboard");
+                response.sendRedirect("/student/dashboard");
             }
         };
     }

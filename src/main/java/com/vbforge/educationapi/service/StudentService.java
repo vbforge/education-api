@@ -96,7 +96,7 @@ public class StudentService {
         studentRepository.deleteById(id);
     }
 
-    Student getStudentOrThrow(Long id) {
+    public Student getStudentOrThrow(Long id) {
         return studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", id));
     }

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Manage Modules - EduFlow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff, #86868b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+        .nav-links a { color: #f5f5f7; text-decoration: none; margin-left: 24px; font-size: 14px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+        .back-link { color: #0a84ff; text-decoration: none; display: inline-block; margin-bottom: 24px; }
+        .card {
+            background: rgba(28,28,32,0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card h2 { margin-bottom: 20px; font-size: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 14px; margin-bottom: 8px; }
+        input, textarea {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: white;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: #0a84ff; color: white; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .module-item {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .alert {
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+        }
+        .alert-success { background: rgba(52,199,89,0.15); color: #34c759; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+    <div class="nav-links">
+        <a href="/instructor/dashboard">Dashboard</a>
+        <a href="/instructor/courses">My Courses</a>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="/instructor/courses" class="back-link">← Back to Courses</a>
+
+    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+
+    <!-- Add Module Form -->
+    <div class="card">
+        <h2>➕ Add New Module</h2>
+        <form th:action="'/instructor/courses/' + ${course.id} + '/modules/create'" method="post">
+            <div class="form-group">
+                <label>Module Title</label>
+                <input type="text" name="title" required>
+            </div>
+            <div class="form-group">
+                <label>Content (optional)</label>
+                <textarea name="content" rows="3" placeholder="Module description..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Order Index</label>
+                <input type="number" name="orderIndex" value="0">
+            </div>
+            <button type="submit" class="btn btn-primary">Create Module →</button>
+        </form>
+    </div>
+
+    <!-- Existing Modules -->
+    <div class="card">
+        <h2>📦 Course Modules</h2>
+        <div th:each="module : ${modules}" class="module-item">
+            <div>
+                <strong th:text="${module.title}">Module Title</strong>
+                <div style="font-size: 12px; color: #86868b;" th:text="'Order: ' + ${module.orderIndex} + ' | Assignments: ' + ${module.assignmentCount}"></div>
+            </div>
+            <div>
+                <a th:href="'/instructor/modules/' + ${module.id} + '/assignments'" class="btn btn-secondary" style="margin-right: 8px;">Manage Assignments</a>
+                <form th:action="'/instructor/modules/' + ${module.id} + '/delete'" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary" style="background: rgba(255,69,58,0.15); color: #ff453a;" onclick="return confirm('Delete this module?')">Delete</button>
+                </form>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(modules)}" style="text-align: center; padding: 40px; color: #86868b;">
+            No modules yet. Create your first module above!
+        </div>
+    </div>
+</div>
+</body>
+</html>

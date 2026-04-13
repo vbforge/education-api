@@ -49,6 +49,6 @@ Thumbs.db
 uploads/
 **/education-api-upload/
 
-### requests ###
-requests/
+### logs ###
+logs
 
