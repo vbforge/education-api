@@ -36,4 +36,11 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             """)
     Double averageGradeByCourseId(@Param("courseId") Long courseId);
 
+    @Query(value = "SELECT s.id, s.name, e.progress_pct, e.grade, e.status, e.created_at " +
+            "FROM enrollments e " +
+            "JOIN students s ON s.id = e.student_id " +
+            "WHERE e.course_id = :courseId",
+            nativeQuery = true)
+    List<Object[]> findEnrollmentsWithStudentByCourseIdNative(@Param("courseId") Long courseId);
+
 }

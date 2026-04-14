@@ -318,9 +318,11 @@
                     <span>⏳ <span th:text="${course.pendingSubmissions}">0</span> to grade</span>
                 </div>
                 <div class="course-actions">
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/edit'" class="btn btn-secondary" style="flex: 1; text-align: center;">Edit Course</a>
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary" style="flex: 1; text-align: center;">Manage Modules</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/edit'" class="btn btn-secondary" style="flex: 1; text-align: center;">Edit</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary" style="flex: 1; text-align: center;">Modules</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/progress'" class="btn btn-secondary" style="flex: 1; text-align: center;">Progress</a>
                     <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn btn-primary" style="flex: 1; text-align: center;">Grade</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/analytics'" class="btn btn-secondary" style="flex: 1; text-align: center;">Analytics</a>
                 </div>
             </div>
         </div>

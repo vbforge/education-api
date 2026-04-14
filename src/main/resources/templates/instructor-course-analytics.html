@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Course Analytics - EduFlow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff, #86868b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+        .nav-links a { color: #f5f5f7; text-decoration: none; margin-left: 24px; font-size: 14px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+        .back-link { color: #0a84ff; text-decoration: none; display: inline-block; margin-bottom: 24px; }
+        .card {
+            background: rgba(28,28,32,0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+        }
+        .stat-value { font-size: 36px; font-weight: 700; color: #0a84ff; }
+        .progress-bar {
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0a84ff, #5e5ce0);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+    <div class="nav-links">
+        <a href="/instructor/dashboard">Dashboard</a>
+        <a href="/instructor/courses">My Courses</a>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="/instructor/courses" class="back-link">← Back to Courses</a>
+
+    <div class="card">
+        <h1 th:text="'Analytics - ' + ${course.name}">Course Analytics</h1>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" th:text="${totalStudents}">0</div>
+                <div>Total Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" th:text="${avgProgress} + '%'">0%</div>
+                <div>Average Progress</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" th:text="${avgGrade} + '%'">0%</div>
+                <div>Average Grade</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" th:text="${completionRate} + '%'">0%</div>
+                <div>Completion Rate</div>
+            </div>
+        </div>
+
+        <h3>Grade Distribution</h3>
+        <div th:each="range : ${gradeDistribution}">
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <span th:text="${range.range}"></span>
+                <span th:text="${range.count} + ' students'"></span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" th:style="'width: ' + ${range.percentage} + '%'"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
