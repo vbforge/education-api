@@ -807,13 +807,21 @@ public class InstructorWebController {
 
         return "instructor-student-progress";
     }
+
+
+    //===============================
+    //        Analytics
+    //===============================
     @GetMapping("/courses/{courseId}/analytics")
     public String courseAnalytics(@PathVariable Long courseId, Model model) {
         try {
             CourseResponseDto course = courseService.findById(courseId);
-            List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
 
+            // Get enrollments
+            List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
             int totalStudents = enrollments.size();
+
+            // Calculate averages
             double avgProgress = enrollments.stream()
                     .mapToDouble(e -> e.getProgressPct().doubleValue())
                     .average().orElse(0);
@@ -828,11 +836,37 @@ public class InstructorWebController {
 
             // Grade distribution
             List<Map<String, Object>> gradeDistribution = Arrays.asList(
-                    createGradeRange("90-100%", 90, 100, enrollments),
-                    createGradeRange("75-89%", 75, 89, enrollments),
-                    createGradeRange("60-74%", 60, 74, enrollments),
-                    createGradeRange("Below 60%", 0, 59, enrollments)
+                    createGradeRange("90-100% (Excellent)", 90, 100, enrollments),
+                    createGradeRange("75-89% (Good)", 75, 89, enrollments),
+                    createGradeRange("60-74% (Average)", 60, 74, enrollments),
+                    createGradeRange("Below 60% (Needs Improvement)", 0, 59, enrollments)
             );
+
+            // Assignment performance
+            List<ModuleResponseDto> modules = moduleService.findByCourse(courseId);
+            List<Map<String, Object>> assignmentStats = new ArrayList<>();
+
+            for (ModuleResponseDto module : modules) {
+                List<AssignmentResponseDto> assignments = assignmentService.findByModule(module.getId());
+                for (AssignmentResponseDto assignment : assignments) {
+                    List<Submission> submissions = submissionRepository.findByAssignmentId(assignment.getId());
+                    double avgScore = submissions.stream()
+                            .filter(s -> s.getScore() != null)
+                            .mapToDouble(s -> s.getScore().doubleValue())
+                            .average().orElse(0);
+                    double maxScore = assignment.getPointsPossible();
+                    double avgScorePercent = maxScore > 0 ? (avgScore / maxScore * 100) : 0;
+
+                    Map<String, Object> stat = new HashMap<>();
+                    stat.put("title", assignment.getTitle());
+                    stat.put("avgScore", Math.round(avgScorePercent));
+                    stat.put("submissionCount", submissions.size());
+                    stat.put("totalStudents", totalStudents);
+                    stat.put("submissionRate", totalStudents > 0 ? (submissions.size() * 100.0 / totalStudents) : 0);
+                    stat.put("pointsPossible", assignment.getPointsPossible());
+                    assignmentStats.add(stat);
+                }
+            }
 
             model.addAttribute("course", course);
             model.addAttribute("totalStudents", totalStudents);
@@ -840,9 +874,12 @@ public class InstructorWebController {
             model.addAttribute("avgGrade", Math.round(avgGrade));
             model.addAttribute("completionRate", Math.round(completionRate));
             model.addAttribute("gradeDistribution", gradeDistribution);
+            model.addAttribute("assignments", assignmentStats);
             model.addAttribute("title", "Course Analytics - " + course.getName());
 
         } catch (Exception e) {
+            System.err.println("Error in courseAnalytics: " + e.getMessage());
+            e.printStackTrace();
             model.addAttribute("error", e.getMessage());
         }
 
@@ -855,13 +892,16 @@ public class InstructorWebController {
                 .filter(e -> e.getGrade() != null)
                 .filter(e -> e.getGrade().doubleValue() >= min && e.getGrade().doubleValue() <= max)
                 .count();
+        double percentage = enrollments.size() > 0 ? (count * 100.0 / enrollments.size()) : 0;
         range.put("range", rangeName);
         range.put("count", count);
-        range.put("percentage", enrollments.size() > 0 ? (count * 100.0 / enrollments.size()) : 0);
+        range.put("percentage", Math.round(percentage));
         return range;
     }
 
-    // Announcements
+    //===========================================
+    //                 Announcements
+    //===========================================
     @GetMapping("/announcements")
     public String manageAnnouncements(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         if (userDetails == null) return "redirect:/login";

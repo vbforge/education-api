@@ -32,6 +32,12 @@
             z-index: 1000;
         }
 
+        .logo:hover {
+            text-shadow: 0 0 10px #05a3b2;
+            transform: scale(1.05);
+            transition: 0.1s ease;
+        }
+
         .logo {
             font-size: 24px;
             font-weight: 600;
@@ -225,6 +231,91 @@
             border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
 
+        /* Apple-style action buttons */
+        .course-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-row .btn {
+            flex: 1;
+            text-align: center;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .action-row .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .action-row .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: #0a84ff;
+            color: white;
+            padding: 12px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: #0063ce;
+            transform: scale(0.98);
+        }
+
+        /* Adjust course card for better spacing */
+        .course-card {
+            background: rgba(28, 28, 32, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .course-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .course-content {
+            padding: 20px;
+        }
+
+        .course-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+
+        .course-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #86868b;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -268,12 +359,32 @@
             .courses-grid {
                 grid-template-columns: 1fr;
             }
+
+            .action-row {
+                flex-direction: column;
+            }
+
+            .action-row .btn {
+                width: 100%;
+            }
+
+            .course-stats {
+                gap: 12px;
+            }
+
         }
     </style>
 </head>
+
 <body>
 <nav class="navbar">
-    <a href="/" class="logo">EduFlow</a>
+    <a href="/" class="logo">
+        <span>Education </span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="#00d4ff" stroke-width="2"/>
+            <text x="6" y="15" fill="#00d4ff" font-size="8">API</text>
+        </svg>
+    </a>
     <div class="nav-links">
         <a href="/instructor/dashboard">Dashboard</a>
         <a href="/instructor/courses">My Courses</a>
@@ -303,8 +414,6 @@
         <span th:text="${message}">Success message</span>
     </div>
 
-
-
     <div th:if="${not #lists.isEmpty(courses)}" class="courses-grid">
         <div th:each="course : ${courses}" class="course-card">
             <div class="course-banner">
@@ -318,11 +427,19 @@
                     <span>⏳ <span th:text="${course.pendingSubmissions}">0</span> to grade</span>
                 </div>
                 <div class="course-actions">
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/edit'" class="btn btn-secondary" style="flex: 1; text-align: center;">Edit</a>
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary" style="flex: 1; text-align: center;">Modules</a>
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/progress'" class="btn btn-secondary" style="flex: 1; text-align: center;">Progress</a>
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn btn-primary" style="flex: 1; text-align: center;">Grade</a>
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/analytics'" class="btn btn-secondary" style="flex: 1; text-align: center;">Analytics</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn btn-primary" style="width: 100%; margin-bottom: 10px;">
+                        ⭐ Grade Submissions
+                    </a>
+                    <div class="action-row">
+                        <a th:href="'/instructor/courses/' + ${course.id} + '/edit'" class="btn btn-secondary">Edit
+                        </a>
+                        <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary">Modules
+                        </a>
+                        <a th:href="'/instructor/courses/' + ${course.id} + '/progress'" class="btn btn-secondary">Progress
+                        </a>
+                        <a th:href="'/instructor/courses/' + ${course.id} + '/analytics'" class="btn btn-secondary">Analytics
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -336,4 +453,5 @@
     </div>
 </div>
 </body>
+
 </html>

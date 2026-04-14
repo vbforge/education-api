@@ -30,7 +30,7 @@
             text-decoration: none;
         }
         .nav-links a { color: #f5f5f7; text-decoration: none; margin-left: 24px; font-size: 14px; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
         .back-link { color: #0a84ff; text-decoration: none; display: inline-block; margin-bottom: 24px; }
         .card {
             background: rgba(28,28,32,0.8);
@@ -39,6 +39,8 @@
             padding: 24px;
             margin-bottom: 24px;
         }
+        .card h1 { margin-bottom: 20px; font-size: 24px; }
+        .card h2 { margin-bottom: 16px; font-size: 20px; }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -52,6 +54,7 @@
             border-radius: 16px;
         }
         .stat-value { font-size: 36px; font-weight: 700; color: #0a84ff; }
+        .stat-label { font-size: 14px; color: #86868b; margin-top: 8px; }
         .progress-bar {
             height: 20px;
             background: rgba(255,255,255,0.1);
@@ -63,6 +66,39 @@
             height: 100%;
             background: linear-gradient(90deg, #0a84ff, #5e5ce0);
             border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        .grade-range-item {
+            margin-bottom: 16px;
+        }
+        .range-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .assignment-item {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .assignment-stats {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            color: #86868b;
+        }
+        .avg-score {
+            color: #34c759;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .assignment-item { flex-direction: column; text-align: center; }
         }
     </style>
 </head>
@@ -81,34 +117,66 @@
     <div class="card">
         <h1 th:text="'Analytics - ' + ${course.name}">Course Analytics</h1>
 
+        <!-- Stats Overview -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value" th:text="${totalStudents}">0</div>
-                <div>Total Students</div>
+                <div class="stat-label">Total Students</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" th:text="${avgProgress} + '%'">0%</div>
-                <div>Average Progress</div>
+                <div class="stat-label">Average Progress</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" th:text="${avgGrade} + '%'">0%</div>
-                <div>Average Grade</div>
+                <div class="stat-label">Average Grade</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" th:text="${completionRate} + '%'">0%</div>
-                <div>Completion Rate</div>
+                <div class="stat-label">Completion Rate</div>
             </div>
         </div>
+    </div>
 
-        <h3>Grade Distribution</h3>
-        <div th:each="range : ${gradeDistribution}">
-            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-                <span th:text="${range.range}"></span>
-                <span th:text="${range.count} + ' students'"></span>
+    <!-- Grade Distribution -->
+    <div class="card">
+        <h2>📊 Grade Distribution</h2>
+        <div th:each="range : ${gradeDistribution}" class="grade-range-item">
+            <div class="range-header">
+                <span th:text="${range.range}">Range</span>
+                <span th:text="${range.count} + ' students (' + ${range.percentage} + '%)'">0 students</span>
             </div>
             <div class="progress-bar">
                 <div class="progress-fill" th:style="'width: ' + ${range.percentage} + '%'"></div>
             </div>
+        </div>
+        <div th:if="${#lists.isEmpty(gradeDistribution)}" style="text-align: center; padding: 40px; color: #86868b;">
+            No grades available yet
+        </div>
+    </div>
+
+    <!-- Assignment Performance -->
+    <div class="card">
+        <h2>📝 Assignment Performance</h2>
+        <div th:if="${not #lists.isEmpty(assignments)}">
+            <div th:each="assignment : ${assignments}" class="assignment-item">
+                <div>
+                    <strong th:text="${assignment.title}">Assignment Title</strong>
+                    <div class="assignment-stats">
+                        <span>📊 Avg Score: <span class="avg-score" th:text="${assignment.avgScore} + '%'">0%</span></span>
+                        <span>📝 Submissions: <span th:text="${assignment.submissionCount}">0</span>/<span th:text="${assignment.totalStudents}">0</span></span>
+                        <span>⭐ Points: <span th:text="${assignment.pointsPossible}">0</span></span>
+                    </div>
+                </div>
+                <div>
+                    <div class="progress-bar" style="width: 150px;">
+                        <div class="progress-fill" th:style="'width: ' + ${assignment.submissionRate} + '%'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(assignments)}" style="text-align: center; padding: 40px; color: #86868b;">
+            No assignments in this course yet
         </div>
     </div>
 </div>
