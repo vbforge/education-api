@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Instructor Dashboard - EduFlow</title>
+    <title>Instructor Dashboard - Education API</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        .logo:hover {
+            text-shadow: 0 0 10px #05a3b2;
+            transform: scale(1.05);
+            transition: 0.1s ease;
         }
 
         body {
@@ -297,6 +303,45 @@
             font-size: 12px;
         }
 
+        .announcements-list {
+            background: rgba(28, 28, 32, 0.6);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .announcement-item {
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.2s;
+        }
+
+        .announcement-item:last-child {
+            border-bottom: none;
+        }
+
+        .announcement-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .announcement-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .announcement-meta {
+            font-size: 12px;
+            color: #86868b;
+            margin-bottom: 8px;
+        }
+
+        .announcement-message {
+            font-size: 14px;
+            color: #a1a1a6;
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px 16px;
@@ -310,12 +355,22 @@
         }
     </style>
 </head>
+
 <body>
 <nav class="navbar">
-    <a href="/" class="logo">EduFlow</a>
+
+    <a href="/" class="logo">
+        <span>Education </span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="#00d4ff" stroke-width="2"/>
+            <text x="6" y="15" fill="#00d4ff" font-size="8">API</text>
+        </svg>
+    </a>
+
     <div class="nav-links">
         <a href="/instructor/dashboard">Dashboard</a>
         <a href="/instructor/courses">My Courses</a>
+        <a href="/instructor/announcements">Announcements</a>
         <div class="user-menu">
             <span class="user-name" sec:authentication="name">User</span>
             <form th:action="@{/logout}" method="post" style="display: inline;">
@@ -385,7 +440,8 @@
         </div>
     </div>
 
-    <div class="section-header">
+    <!-- Pending Grading Section -->
+    <div class="section-header" style="margin-top: 32px;">
         <h2>Pending Grading</h2>
         <a href="/instructor/grading">View all →</a>
     </div>
@@ -396,7 +452,7 @@
                 <h4 th:text="${submission.assignmentTitle}">Assignment Title</h4>
                 <div class="submission-meta">
                     <span th:text="'📘 ' + ${submission.courseName} + ' • 👨‍🎓 ' + ${submission.studentName}"></span>
-                    <span th:text="' • Submitted: ' + ${#temporals.format(submission.submittedAt, 'MMM dd, yyyy')}"></span>
+                    <span th:text="' • Submitted: ' + ${submission.submittedAt}"></span>
                 </div>
             </div>
             <div>
@@ -409,6 +465,30 @@
             🎉 No pending submissions! All caught up.
         </div>
     </div>
+
+    <!-- Announcements Section -->
+    <div class="section-header" style="margin-top: 32px;">
+        <h2>Recent Announcements</h2>
+        <a href="/instructor/announcements">Manage →</a>
+    </div>
+
+    <div class="announcements-list">
+        <div th:each="announcement : ${announcements}" class="announcement-item">
+            <div class="announcement-info">
+                <h4 th:text="${announcement.title}">Announcement Title</h4>
+                <div class="announcement-meta">
+                    <span th:text="'📘 ' + ${announcement.courseName}"></span>
+                    <span th:text="' • Posted: ' + ${announcement.postedAt}"></span>
+                </div>
+                <div class="announcement-message" th:text="${announcement.message}">Message preview...</div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(announcements)}" style="padding: 48px; text-align: center; color: #86868b;">
+            No announcements yet. Create your first announcement!
+        </div>
+    </div>
+
 </div>
 </body>
+
 </html>

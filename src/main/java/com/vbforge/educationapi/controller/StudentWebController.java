@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +39,7 @@ public class StudentWebController {
     private final StorageService storageService;
     private final EnrollmentRepository enrollmentRepository;
     private final SubmissionRepository submissionRepository;
+    private final AnnouncementRepository announcementRepository;
 
     @GetMapping("/dashboard")
     public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
@@ -246,4 +248,43 @@ public class StudentWebController {
             return "redirect:/student/assignments/" + assignmentId + "/submit";
         }
     }
+
+    @GetMapping("/announcements")
+    public String viewAnnouncements(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        if (userDetails == null) return "redirect:/login";
+
+        try {
+            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+            List<Enrollment> enrollments = enrollmentRepository.findByStudentId(student.getId());
+
+            List<Map<String, Object>> announcements = new ArrayList<>();
+            for (Enrollment enrollment : enrollments) {
+                List<Announcement> anns = announcementRepository.findByCourseIdOrderByPostedAtDesc(enrollment.getCourse().getId());
+                for (Announcement ann : anns) {
+                    Map<String, Object> annMap = new HashMap<>();
+                    annMap.put("title", ann.getTitle());
+                    annMap.put("message", ann.getMessage());
+                    annMap.put("courseName", enrollment.getCourse().getName());
+                    annMap.put("postedAt", ann.getPostedAt());
+                    announcements.add(annMap);
+                }
+            }
+
+            // Sort by posted date descending
+            announcements.sort((a, b) -> {
+                if (a.get("postedAt") == null) return 1;
+                if (b.get("postedAt") == null) return -1;
+                return ((LocalDateTime) b.get("postedAt")).compareTo((LocalDateTime) a.get("postedAt"));
+            });
+
+            model.addAttribute("announcements", announcements);
+            model.addAttribute("title", "Announcements");
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+
+        return "student-announcements";
+    }
+
 }

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,7 @@ public class InstructorWebController {
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final AnnouncementRepository announcementRepository;
 
     // ============================================
     // DASHBOARD
@@ -125,6 +127,25 @@ public class InstructorWebController {
             model.addAttribute("pendingSubmissions", pendingSubmissions);
             model.addAttribute("title", "Instructor Dashboard");
 
+
+            // Get recent announcements from instructor's courses
+            List<Map<String, Object>> announcements = new ArrayList<>();
+            for (Course course : myCourses) {
+                List<Announcement> anns = announcementRepository.findByCourseIdOrderByPostedAtDesc(course.getId());
+                for (Announcement ann : anns.stream().limit(3).toList()) {
+                    Map<String, Object> annMap = new HashMap<>();
+                    annMap.put("id", ann.getId());
+                    annMap.put("title", ann.getTitle());
+                    annMap.put("message", ann.getMessage().length() > 100 ?
+                            ann.getMessage().substring(0, 100) + "..." : ann.getMessage());
+                    annMap.put("courseName", course.getName());
+                    annMap.put("postedAt", ann.getPostedAt());
+                    announcements.add(annMap);
+                }
+            }
+
+            model.addAttribute("announcements", announcements);
+
         } catch (Exception e) {
             System.err.println("ERROR in instructor dashboard: " + e.getMessage());
             e.printStackTrace();
@@ -135,6 +156,7 @@ public class InstructorWebController {
             model.addAttribute("avgCompletion", 0);
             model.addAttribute("courses", new ArrayList<>());
             model.addAttribute("pendingSubmissions", new ArrayList<>());
+            model.addAttribute("announcements", new ArrayList<>());
         }
 
         return "instructor-dashboard";
@@ -837,6 +859,91 @@ public class InstructorWebController {
         range.put("count", count);
         range.put("percentage", enrollments.size() > 0 ? (count * 100.0 / enrollments.size()) : 0);
         return range;
+    }
+
+    // Announcements
+    @GetMapping("/announcements")
+    public String manageAnnouncements(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        if (userDetails == null) return "redirect:/login";
+
+        try {
+            String instructorEmail = userDetails.getUsername();
+            List<Course> allCourses = courseRepository.findAll();
+            List<Course> myCourses = allCourses.stream()
+                    .filter(c -> c.getInstructor() != null && instructorEmail.equalsIgnoreCase(c.getInstructor().trim()))
+                    .collect(Collectors.toList());
+
+            List<Map<String, Object>> courseList = new ArrayList<>();
+            for (Course course : myCourses) {
+                Map<String, Object> courseMap = new HashMap<>();
+                courseMap.put("id", course.getId());
+                courseMap.put("name", course.getName());
+                courseList.add(courseMap);
+            }
+
+            // Get recent announcements from instructor's courses
+            List<Map<String, Object>> announcements = new ArrayList<>();
+            for (Course course : myCourses) {
+                List<Announcement> anns = announcementRepository.findByCourseIdOrderByPostedAtDesc(course.getId());
+                for (Announcement ann : anns.stream().limit(3).toList()) {
+                    Map<String, Object> annMap = new HashMap<>();
+                    annMap.put("id", ann.getId());
+                    annMap.put("title", ann.getTitle());
+                    annMap.put("message", ann.getMessage());
+                    annMap.put("courseName", course.getName());
+                    annMap.put("postedAt", ann.getPostedAt());
+                    announcements.add(annMap);
+                }
+            }
+
+            model.addAttribute("courses", courseList);
+            model.addAttribute("announcements", announcements);
+            model.addAttribute("title", "Manage Announcements");
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+
+        return "instructor-announcements";
+    }
+
+    @PostMapping("/announcements/create")
+    public String createAnnouncement(@RequestParam Long courseId,
+                                     @RequestParam String title,
+                                     @RequestParam String message,
+                                     @AuthenticationPrincipal UserDetails userDetails,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            Student instructor = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+            Course course = courseRepository.findById(courseId).orElseThrow();
+
+            Announcement announcement = Announcement.builder()
+                    .course(course)
+                    .instructor(instructor)
+                    .title(title)
+                    .message(message)
+                    .postedAt(LocalDateTime.now())
+                    .build();
+
+            announcementRepository.save(announcement);
+            redirectAttributes.addFlashAttribute("message", "Announcement posted successfully!");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to post announcement: " + e.getMessage());
+        }
+
+        return "redirect:/instructor/announcements";
+    }
+
+    @PostMapping("/announcements/{id}/delete")
+    public String deleteAnnouncement(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            announcementRepository.deleteById(id);
+            redirectAttributes.addFlashAttribute("message", "Announcement deleted successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to delete announcement: " + e.getMessage());
+        }
+        return "redirect:/instructor/announcements";
     }
 
 }

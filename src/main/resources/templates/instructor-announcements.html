@@ -30,7 +30,7 @@
             text-decoration: none;
         }
         .nav-links a { color: #f5f5f7; text-decoration: none; margin-left: 24px; font-size: 14px; }
-        .container { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
         .back-link { color: #0a84ff; text-decoration: none; display: inline-block; margin-bottom: 24px; }
         .card {
             background: rgba(28,28,32,0.8);
@@ -39,30 +39,58 @@
             padding: 24px;
             margin-bottom: 24px;
         }
-        .card h2 { margin-bottom: 16px; }
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 14px; margin-bottom: 8px; }
-        input, textarea {
+        .card h2 { margin-bottom: 20px; font-size: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+        input, textarea, select {
             width: 100%;
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
-            padding: 12px;
-            color: white;
+            padding: 12px 16px;
+            color: #f5f5f7;
+            font-family: inherit;
         }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #0a84ff; }
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 12px;
             border: none;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
         }
         .btn-primary { background: #0a84ff; color: white; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
         .announcement-item {
-            padding: 16px;
+            padding: 20px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
-        .alert { padding: 16px; border-radius: 14px; margin-bottom: 20px; }
+        .announcement-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .announcement-meta {
+            font-size: 12px;
+            color: #86868b;
+            margin-bottom: 12px;
+        }
+        .announcement-message {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #a1a1a6;
+        }
+        .alert {
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+        }
         .alert-success { background: rgba(52,199,89,0.15); color: #34c759; }
+        .alert-error { background: rgba(255,69,58,0.15); color: #ff453a; }
+        .empty-state { text-align: center; padding: 60px; color: #86868b; }
+        .btn-group { display: flex; gap: 12px; margin-top: 16px; }
     </style>
 </head>
 <body>
@@ -75,34 +103,53 @@
 </nav>
 
 <div class="container">
-    <a href="/instructor/courses" class="back-link">← Back to Courses</a>
+    <a href="/instructor/dashboard" class="back-link">← Back to Dashboard</a>
 
     <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
+    <!-- Create Announcement -->
     <div class="card">
-        <h2>📢 Post Announcement</h2>
-        <form th:action="'/instructor/courses/' + ${courseId} + '/announcements/create'" method="post">
+        <h2>📢 Post New Announcement</h2>
+        <form th:action="@{/instructor/announcements/create}" method="post">
+            <div class="form-group">
+                <label>Course</label>
+                <select name="courseId" required>
+                    <option th:each="course : ${courses}" th:value="${course.id}" th:text="${course.name}"></option>
+                </select>
+            </div>
             <div class="form-group">
                 <label>Title</label>
-                <input type="text" name="title" required>
+                <input type="text" name="title" required placeholder="Announcement title...">
             </div>
             <div class="form-group">
                 <label>Message</label>
-                <textarea name="message" rows="4" required></textarea>
+                <textarea name="message" rows="5" required placeholder="Write your announcement here..."></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Post Announcement →</button>
         </form>
     </div>
 
+    <!-- Recent Announcements -->
     <div class="card">
         <h2>📋 Recent Announcements</h2>
-        <div th:each="ann : ${announcements}" class="announcement-item">
-            <strong th:text="${ann.title}">Title</strong>
-            <div style="font-size: 12px; color: #86868b;" th:text="'Posted: ' + ${#temporals.format(ann.createdAt, 'MMM dd, yyyy')}"></div>
-            <div style="margin-top: 8px;" th:text="${ann.message}">Message</div>
+        <div th:if="${not #lists.isEmpty(announcements)}">
+            <div th:each="ann : ${announcements}" class="announcement-item">
+                <div class="announcement-title" th:text="${ann.title}">Title</div>
+                <div class="announcement-meta">
+                    <span th:text="'📘 ' + ${ann.courseName}"></span>
+                    <span th:text="' • Posted: ' + ${#temporals.format(ann.postedAt, 'MMM dd, yyyy • hh:mm a')}"></span>
+                </div>
+                <div class="announcement-message" th:text="${ann.message}">Message</div>
+                <div class="btn-group">
+                    <form th:action="'/instructor/announcements/' + ${ann.id} + '/delete'" method="post">
+                        <button type="submit" class="btn btn-secondary" style="background: rgba(255,69,58,0.15); color: #ff453a;" onclick="return confirm('Delete this announcement?')">Delete</button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div th:if="${#lists.isEmpty(announcements)}" style="text-align: center; padding: 40px; color: #86868b;">
-            No announcements yet.
+        <div th:if="${#lists.isEmpty(announcements)}" class="empty-state">
+            No announcements yet. Post your first announcement above!
         </div>
     </div>
 </div>
