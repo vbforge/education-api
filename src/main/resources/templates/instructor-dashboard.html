@@ -371,8 +371,9 @@
                 </div>
             </div>
             <div class="course-footer">
-                <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary">Manage Course →</a>
-                <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn">Grade Submissions</a>
+                <a th:href="'/instructor/courses/' + ${course.id} + '/edit'" class="btn btn-secondary">Edit Course</a>
+                <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary">Manage Modules</a>
+                <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn">Grade</a>
             </div>
         </div>
 

@@ -51,29 +51,17 @@ public class InstructorWebController {
             System.out.println("=== INSTRUCTOR DASHBOARD DEBUG ===");
             System.out.println("Logged in email: '" + instructorEmail + "'");
 
-            // Get ALL courses to see what's in DB
+            // Get courses taught by this instructor
             List<Course> allCourses = courseRepository.findAll();
-            System.out.println("Total courses in DB: " + allCourses.size());
-
-            for (Course c : allCourses) {
-                System.out.println("  Course: '" + c.getName() + "', Instructor: '" + c.getInstructor() + "'");
-            }
-
-            // Filter courses by instructor (trim and case-insensitive)
             List<Course> myCourses = allCourses.stream()
-                    .filter(c -> c.getInstructor() != null &&
-                            instructorEmail.equalsIgnoreCase(c.getInstructor().trim()))
+                    .filter(c -> c.getInstructor() != null && instructorEmail.equalsIgnoreCase(c.getInstructor().trim()))
                     .collect(Collectors.toList());
-
-            System.out.println("Courses matching instructor: " + myCourses.size());
 
             List<Map<String, Object>> courseList = new ArrayList<>();
             int totalStudents = 0;
             int pendingGrading = 0;
 
             for (Course course : myCourses) {
-                System.out.println("Processing course: " + course.getName());
-
                 Map<String, Object> courseMap = new HashMap<>();
                 courseMap.put("id", course.getId());
                 courseMap.put("name", course.getName());
@@ -81,10 +69,6 @@ public class InstructorWebController {
                 int enrollmentCount = courseRepository.countEnrollmentsByCourseId(course.getId());
                 int moduleCount = courseRepository.countModulesByCourseId(course.getId());
                 int pending = submissionRepository.findByCourseIdAndStatus(course.getId(), SubmissionStatus.SUBMITTED).size();
-
-                System.out.println("  Enrollment count: " + enrollmentCount);
-                System.out.println("  Module count: " + moduleCount);
-                System.out.println("  Pending submissions: " + pending);
 
                 courseMap.put("enrollmentCount", enrollmentCount);
                 courseMap.put("moduleCount", moduleCount);
@@ -95,20 +79,62 @@ public class InstructorWebController {
                 courseList.add(courseMap);
             }
 
-            System.out.println("Final courseList size: " + courseList.size());
+            // Calculate average completion
+            double avgCompletion = 0;
+            int totalProgress = 0;
+            int enrollmentCount = 0;
+            for (Course course : myCourses) {
+                List<Enrollment> enrollments = enrollmentRepository.findByCourseId(course.getId());
+                for (Enrollment e : enrollments) {
+                    totalProgress += e.getProgressPct().doubleValue();
+                    enrollmentCount++;
+                }
+            }
+            avgCompletion = enrollmentCount > 0 ? (double) totalProgress / enrollmentCount : 0;
+
+            // Get pending submissions for the dashboard using native query
+            List<Map<String, Object>> pendingSubmissions = new ArrayList<>();
+            for (Course course : myCourses) {
+                // Use native query to get pending submissions for this course
+                List<Object[]> results = submissionRepository.findPendingSubmissionsByCourseIdNative(course.getId());
+                for (Object[] row : results) {
+                    Map<String, Object> subMap = new HashMap<>();
+                    subMap.put("id", row[0]);
+                    subMap.put("assignmentTitle", row[1]);
+                    subMap.put("studentName", row[2]);
+                    subMap.put("courseName", course.getName());
+                    subMap.put("submittedAt", row[3]);
+                    pendingSubmissions.add(subMap);
+                    System.out.println("Added pending submission: " + row[1] + " - " + row[2]);
+                }
+            }
+
+            // Limit to 5 most recent
+            if (pendingSubmissions.size() > 5) {
+                pendingSubmissions = pendingSubmissions.subList(0, 5);
+            }
+
+            System.out.println("Final stats - Courses: " + myCourses.size() + ", Students: " + totalStudents +
+                    ", Pending: " + pendingGrading + ", Dashboard pending list: " + pendingSubmissions.size());
 
             model.addAttribute("courseCount", myCourses.size());
             model.addAttribute("totalStudents", totalStudents);
             model.addAttribute("pendingGrading", pendingGrading);
-            model.addAttribute("avgCompletion", 0);
+            model.addAttribute("avgCompletion", Math.round(avgCompletion));
             model.addAttribute("courses", courseList);
-            model.addAttribute("pendingSubmissions", new ArrayList<>());
+            model.addAttribute("pendingSubmissions", pendingSubmissions);
             model.addAttribute("title", "Instructor Dashboard");
 
         } catch (Exception e) {
-            System.err.println("ERROR: " + e.getMessage());
+            System.err.println("ERROR in instructor dashboard: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("error", e.getMessage());
+            model.addAttribute("courseCount", 0);
+            model.addAttribute("totalStudents", 0);
+            model.addAttribute("pendingGrading", 0);
+            model.addAttribute("avgCompletion", 0);
+            model.addAttribute("courses", new ArrayList<>());
+            model.addAttribute("pendingSubmissions", new ArrayList<>());
         }
 
         return "instructor-dashboard";
@@ -117,18 +143,29 @@ public class InstructorWebController {
     // ============================================
     // COURSE MANAGEMENT
     // ============================================
-    
+
     @GetMapping("/courses")
     public String myCourses(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         if (userDetails == null) return "redirect:/login";
-        
+
         try {
             String instructorEmail = userDetails.getUsername();
+            System.out.println("=== MY COURSES DEBUG ===");
+            System.out.println("Instructor email: " + instructorEmail);
+
             List<Course> allCourses = courseRepository.findAll();
+            System.out.println("Total courses in DB: " + allCourses.size());
+
+            for (Course c : allCourses) {
+                System.out.println("  Course: '" + c.getName() + "', Instructor: '" + c.getInstructor() + "'");
+            }
+
             List<Course> myCourses = allCourses.stream()
                     .filter(c -> c.getInstructor() != null && instructorEmail.equalsIgnoreCase(c.getInstructor().trim()))
                     .collect(Collectors.toList());
-            
+
+            System.out.println("Courses matching instructor: " + myCourses.size());
+
             List<Map<String, Object>> courseList = new ArrayList<>();
             for (Course course : myCourses) {
                 Map<String, Object> courseMap = new HashMap<>();
@@ -138,16 +175,19 @@ public class InstructorWebController {
                 courseMap.put("moduleCount", courseRepository.countModulesByCourseId(course.getId()));
                 courseMap.put("pendingSubmissions", submissionRepository.findByCourseIdAndStatus(course.getId(), SubmissionStatus.SUBMITTED).size());
                 courseList.add(courseMap);
+                System.out.println("  Added course: " + course.getName());
             }
-            
+
             model.addAttribute("courses", courseList);
             model.addAttribute("title", "My Courses");
-            
+
         } catch (Exception e) {
+            System.err.println("ERROR: " + e.getMessage());
+            e.printStackTrace();
             model.addAttribute("error", e.getMessage());
             model.addAttribute("courses", new ArrayList<>());
         }
-        
+
         return "instructor-courses";
     }
     
@@ -182,7 +222,7 @@ public class InstructorWebController {
         
         return "redirect:/instructor/courses";
     }
-    
+
     @GetMapping("/courses/{id}/edit")
     public String editCourse(@PathVariable Long id, Model model) {
         try {
@@ -194,7 +234,7 @@ public class InstructorWebController {
             return "redirect:/instructor/courses";
         }
     }
-    
+
     @PostMapping("/courses/{id}/edit")
     public String updateCourse(@PathVariable Long id,
                                @RequestParam String name,
@@ -208,14 +248,20 @@ public class InstructorWebController {
             dto.setDescription(description);
             dto.setSyllabus(syllabus);
             dto.setSchedule(schedule);
-            
+
+            // Make sure to keep the instructor
+            Course existingCourse = courseRepository.findById(id).orElse(null);
+            if (existingCourse != null) {
+                dto.setInstructor(existingCourse.getInstructor());
+            }
+
             courseService.update(id, dto);
             redirectAttributes.addFlashAttribute("message", "Course updated successfully!");
-            
+
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Failed to update course: " + e.getMessage());
         }
-        
+
         return "redirect:/instructor/courses";
     }
 
@@ -275,6 +321,50 @@ public class InstructorWebController {
         }
     }
 
+    @GetMapping("/modules/{id}/edit")
+    public String editModule(@PathVariable Long id, Model model) {
+        try {
+            ModuleResponseDto module = moduleService.findById(id);
+            System.out.println("Editing module: " + module.getTitle() + " for course: " + module.getCourseId());
+            model.addAttribute("module", module);
+            model.addAttribute("courseId", module.getCourseId());
+            model.addAttribute("title", "Edit Module - " + module.getTitle());
+            return "instructor-module-edit";
+        } catch (Exception e) {
+            System.err.println("Error editing module: " + e.getMessage());
+            return "redirect:/instructor/courses";
+        }
+    }
+
+    @PostMapping("/modules/{id}/edit")
+    public String updateModule(@PathVariable Long id,
+                               @RequestParam String title,
+                               @RequestParam(required = false) String content,
+                               @RequestParam(defaultValue = "0") int orderIndex,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            System.out.println("Updating module ID: " + id);
+            System.out.println("New title: " + title);
+
+            ModuleRequestDto dto = new ModuleRequestDto();
+            dto.setTitle(title);
+            dto.setContent(content);
+            dto.setOrderIndex(orderIndex);
+
+            ModuleResponseDto module = moduleService.update(id, dto);
+            System.out.println("Module updated successfully!");
+
+            redirectAttributes.addFlashAttribute("message", "Module updated successfully!");
+            return "redirect:/instructor/courses/" + module.getCourseId() + "/modules";
+        } catch (Exception e) {
+            System.err.println("Error updating module: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Failed to update module: " + e.getMessage());
+            return "redirect:/instructor/modules/" + id + "/edit";
+        }
+    }
+
+
     // ============================================
     // ASSIGNMENT MANAGEMENT
     // ============================================
@@ -320,6 +410,69 @@ public class InstructorWebController {
         
         return "redirect:/instructor/modules/" + moduleId + "/assignments";
     }
+
+    @GetMapping("/assignments/{id}/edit")
+    public String editAssignment(@PathVariable Long id, Model model) {
+        try {
+            AssignmentResponseDto assignment = assignmentService.findById(id);
+            model.addAttribute("assignment", assignment);
+            model.addAttribute("moduleId", assignment.getModuleId());
+            model.addAttribute("title", "Edit Assignment - " + assignment.getTitle());
+            return "instructor-assignment-edit";
+        } catch (Exception e) {
+            return "redirect:/instructor/courses";
+        }
+    }
+
+    @PostMapping("/assignments/{id}/edit")
+    public String updateAssignment(@PathVariable Long id,
+                                   @RequestParam String title,
+                                   @RequestParam(required = false) String description,
+                                   @RequestParam(defaultValue = "100") int pointsPossible,
+                                   @RequestParam(required = false) String dueDate,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            System.out.println("=== UPDATE ASSIGNMENT ===");
+            System.out.println("Assignment ID: " + id);
+            System.out.println("Title: " + title);
+            System.out.println("Points: " + pointsPossible);
+            System.out.println("Due Date: " + dueDate);
+
+            AssignmentRequestDto dto = new AssignmentRequestDto();
+            dto.setTitle(title);
+            dto.setDescription(description);
+            dto.setPointsPossible(pointsPossible);
+            if (dueDate != null && !dueDate.isEmpty()) {
+                dto.setDueDate(java.time.LocalDateTime.parse(dueDate + "T23:59:59"));
+            }
+
+            AssignmentResponseDto assignment = assignmentService.update(id, dto);
+            System.out.println("Assignment updated! Module ID: " + assignment.getModuleId());
+
+            redirectAttributes.addFlashAttribute("message", "Assignment updated successfully!");
+            return "redirect:/instructor/modules/" + assignment.getModuleId() + "/assignments";
+        } catch (Exception e) {
+            System.err.println("Error updating assignment: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Failed to update assignment: " + e.getMessage());
+            return "redirect:/instructor/assignments/" + id + "/edit";
+        }
+    }
+
+    @PostMapping("/assignments/{id}/delete")
+    public String deleteAssignment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            AssignmentResponseDto assignment = assignmentService.findById(id);
+            Long moduleId = assignment.getModuleId();
+            assignmentService.delete(id);
+            redirectAttributes.addFlashAttribute("message", "Assignment deleted successfully!");
+            return "redirect:/instructor/modules/" + moduleId + "/assignments";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to delete assignment: " + e.getMessage());
+            return "redirect:/instructor/courses";
+        }
+    }
+
 
     // ============================================
     // GRADING
@@ -462,6 +615,52 @@ public class InstructorWebController {
             redirectAttributes.addFlashAttribute("error", "Failed to save grade: " + e.getMessage());
             return "redirect:/instructor/submissions/" + id + "/grade";
         }
+    }
+
+    @GetMapping("/grading")
+    public String allPendingSubmissions(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            String instructorEmail = userDetails.getUsername();
+            System.out.println("=== ALL PENDING SUBMISSIONS ===");
+
+            // Get courses taught by this instructor
+            List<Course> allCourses = courseRepository.findAll();
+            List<Course> myCourses = allCourses.stream()
+                    .filter(c -> c.getInstructor() != null && instructorEmail.equalsIgnoreCase(c.getInstructor().trim()))
+                    .collect(Collectors.toList());
+
+            // Get all pending submissions from instructor's courses
+            List<Map<String, Object>> allPending = new ArrayList<>();
+            for (Course course : myCourses) {
+                List<Object[]> results = submissionRepository.findPendingSubmissionsByCourseIdNative(course.getId());
+                for (Object[] row : results) {
+                    Map<String, Object> subMap = new HashMap<>();
+                    subMap.put("id", row[0]);
+                    subMap.put("assignmentTitle", row[1]);
+                    subMap.put("studentName", row[2]);
+                    subMap.put("courseName", course.getName());
+                    subMap.put("submittedAt", row[3]);
+                    allPending.add(subMap);
+                }
+            }
+
+            System.out.println("Total pending submissions: " + allPending.size());
+
+            model.addAttribute("submissions", allPending);
+            model.addAttribute("title", "All Pending Submissions");
+
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("submissions", new ArrayList<>());
+        }
+
+        return "instructor-grading-all";
     }
 
 }

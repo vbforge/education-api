@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Pending Submissions - EduFlow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff, #86868b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+        .nav-links a { color: #f5f5f7; text-decoration: none; margin-left: 24px; font-size: 14px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+        .back-link { color: #0a84ff; text-decoration: none; display: inline-block; margin-bottom: 24px; }
+        .card {
+            background: rgba(28,28,32,0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 24px;
+        }
+        .card h1 { margin-bottom: 20px; font-size: 28px; }
+        .submission-item {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .submission-item:last-child { border-bottom: none; }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: #0a84ff; color: white; }
+        .pending-badge {
+            background: rgba(255,159,10,0.15);
+            color: #ff9f0a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .empty-state { text-align: center; padding: 60px; color: #86868b; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+    <div class="nav-links">
+        <a href="/instructor/dashboard">Dashboard</a>
+        <a href="/instructor/courses">My Courses</a>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="/instructor/dashboard" class="back-link">← Back to Dashboard</a>
+
+    <div class="card">
+        <h1>All Pending Submissions</h1>
+
+        <div th:if="${not #lists.isEmpty(submissions)}">
+            <div th:each="sub : ${submissions}" class="submission-item">
+                <div>
+                    <strong th:text="${sub.assignmentTitle}">Assignment</strong>
+                    <div style="font-size: 13px; color: #0a84ff;" th:text="'📘 ' + ${sub.courseName}"></div>
+                    <div style="font-size: 13px; color: #86868b;" th:text="'👨‍🎓 ' + ${sub.studentName}"></div>
+                    <div style="font-size: 12px;" th:text="'Submitted: ' + ${#temporals.format(sub.submittedAt, 'MMM dd, yyyy')}"></div>
+                </div>
+                <div>
+                    <span class="pending-badge">Pending Review</span>
+                    <a th:href="'/instructor/submissions/' + ${sub.id} + '/grade'" class="btn btn-primary" style="margin-left: 12px;">Grade →</a>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(submissions)}" class="empty-state">
+            🎉 No pending submissions! All caught up.
+        </div>
+    </div>
+</div>
+</body>
+</html>

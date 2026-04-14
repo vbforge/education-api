@@ -67,6 +67,11 @@ public class CourseService {
     public CourseResponseDto update(Long id, CourseRequestDto dto) {
         Course course = getCourseOrThrow(id);
 
+        // Don't update instructor if not provided
+        if (dto.getInstructor() != null && !dto.getInstructor().isEmpty()) {
+            course.setInstructor(dto.getInstructor());
+        }
+
         // allow same name if it belongs to this course (updating other fields)
         boolean nameConflict = courseRepository.existsByNameIgnoreCase(dto.getName())
                 && !course.getName().equalsIgnoreCase(dto.getName());
@@ -76,11 +81,14 @@ public class CourseService {
             );
         }
 
-        CourseMapper.updateEntity(course, dto);
+        course.setName(dto.getName());
+        course.setDescription(dto.getDescription());
+        course.setSyllabus(dto.getSyllabus());
+        course.setSchedule(dto.getSchedule());
+
         Course updated = courseRepository.save(course);
         int moduleCount = courseRepository.countModulesByCourseId(id);
         int enrollmentCount = courseRepository.countEnrollmentsByCourseId(id);
-
         return CourseMapper.toDto(updated, moduleCount, enrollmentCount);
     }
 

@@ -303,6 +303,8 @@
         <span th:text="${message}">Success message</span>
     </div>
 
+
+
     <div th:if="${not #lists.isEmpty(courses)}" class="courses-grid">
         <div th:each="course : ${courses}" class="course-card">
             <div class="course-banner">
@@ -316,8 +318,9 @@
                     <span>⏳ <span th:text="${course.pendingSubmissions}">0</span> to grade</span>
                 </div>
                 <div class="course-actions">
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary" style="flex: 1; text-align: center;">Manage Course →</a>
-                    <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn btn-primary" style="flex: 1; text-align: center;">Grade Submissions</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/edit'" class="btn btn-secondary" style="flex: 1; text-align: center;">Edit Course</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/modules'" class="btn btn-secondary" style="flex: 1; text-align: center;">Manage Modules</a>
+                    <a th:href="'/instructor/courses/' + ${course.id} + '/grade'" class="btn btn-primary" style="flex: 1; text-align: center;">Grade</a>
                 </div>
             </div>
         </div>

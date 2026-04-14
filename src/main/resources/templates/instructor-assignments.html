@@ -113,9 +113,24 @@
         </form>
     </div>
 
+
+
+
+
     <!-- Existing Assignments -->
     <div class="card">
         <h2>📝 Assignments</h2>
+<!--        <div th:each="assignment : ${assignments}" class="assignment-item">-->
+<!--            <div>-->
+<!--                <strong th:text="${assignment.title}">Assignment Title</strong>-->
+<!--                <div style="font-size: 12px; color: #86868b;">-->
+<!--                    <span th:text="'Points: ' + ${assignment.pointsPossible}"></span>-->
+<!--                    <span th:text="' | Submissions: ' + ${assignment.submissionCount}"></span>-->
+<!--                    <span th:text="' | Due: ' + ${#temporals.format(assignment.dueDate, 'MMM dd, yyyy')}"></span>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
         <div th:each="assignment : ${assignments}" class="assignment-item">
             <div>
                 <strong th:text="${assignment.title}">Assignment Title</strong>
@@ -125,7 +140,14 @@
                     <span th:text="' | Due: ' + ${#temporals.format(assignment.dueDate, 'MMM dd, yyyy')}"></span>
                 </div>
             </div>
+            <div>
+                <a th:href="'/instructor/assignments/' + ${assignment.id} + '/edit'" class="btn btn-secondary" style="margin-right: 8px;">Edit</a>
+                <form th:action="'/instructor/assignments/' + ${assignment.id} + '/delete'" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary" style="background: rgba(255,69,58,0.15); color: #ff453a;" onclick="return confirm('Delete this assignment? All submissions will be deleted.')">Delete</button>
+                </form>
+            </div>
         </div>
+
         <div th:if="${#lists.isEmpty(assignments)}" style="text-align: center; padding: 40px; color: #86868b;">
             No assignments yet. Create your first assignment above!
         </div>
