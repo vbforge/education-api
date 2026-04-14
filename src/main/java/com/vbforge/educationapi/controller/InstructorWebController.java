@@ -746,25 +746,22 @@ public class InstructorWebController {
         }
 
         try {
-            // Get student details
             Student student = studentService.getStudentOrThrow(id);
 
-            // Get all submissions for this student with eager loading using native query
             List<Object[]> submissionResults = submissionRepository.findStudentSubmissionsWithDetailsNative(id);
 
             List<Map<String, Object>> assignments = new ArrayList<>();
             for (Object[] row : submissionResults) {
                 Map<String, Object> assignmentMap = new HashMap<>();
-                assignmentMap.put("title", row[0]);  // assignment title
-                assignmentMap.put("dueDate", row[1]); // due date
-                assignmentMap.put("pointsPossible", row[2]); // points possible
-                assignmentMap.put("score", row[3]); // score
-                assignmentMap.put("status", row[4]); // status
+                assignmentMap.put("title", row[0]);
+                assignmentMap.put("dueDate", row[1]);
+                assignmentMap.put("pointsPossible", row[2]);
+                assignmentMap.put("score", row[3]);
+                assignmentMap.put("status", row[4]);
+                assignmentMap.put("filePath", row[5]);  // Add file path
                 assignments.add(assignmentMap);
             }
 
-            // Get enrollment for this student (you might need courseId)
-            // For now, create a simple student map
             Map<String, Object> studentMap = new HashMap<>();
             studentMap.put("id", student.getId());
             studentMap.put("name", student.getName());
@@ -775,7 +772,7 @@ public class InstructorWebController {
 
             model.addAttribute("student", studentMap);
             model.addAttribute("assignments", assignments);
-            model.addAttribute("courseId", 1); // You'll need to pass actual courseId from request
+            model.addAttribute("courseId", 1);
             model.addAttribute("title", "Student Progress - " + student.getName());
 
         } catch (Exception e) {
@@ -788,7 +785,6 @@ public class InstructorWebController {
 
         return "instructor-student-progress";
     }
-
     @GetMapping("/courses/{courseId}/analytics")
     public String courseAnalytics(@PathVariable Long courseId, Model model) {
         try {

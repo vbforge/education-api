@@ -112,13 +112,16 @@
             <div class="info-value" th:text="${submission.submittedAt}">Date</div>
         </div>
 
-<!--        <div th:if="${submission.filePath != null}" class="file-link">-->
-<!--            <a th:href="'/api/v1/files/' + ${submission.filePath}" target="_blank">📎 Download Submission File</a>-->
-<!--        </div>-->
-
+        <!-- In the submission details section -->
         <div th:if="${submission.filePath != null}" class="file-link">
-            <a th:href="'/api/v1/files/' + ${submission.filePath}" target="_blank">📎 Download Submission File</a>
+            <a th:href="'/files/' + ${submission.filePath}" target="_blank">
+                📎 Download Submission File
+            </a>
         </div>
+        <div th:unless="${submission.filePath != null}" class="file-link">
+            <span>📝 No file uploaded - text submission only</span>
+        </div>
+
 
     </div>
 

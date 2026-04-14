@@ -120,6 +120,25 @@
     <div class="card">
         <h2>📝 Assignment Grades</h2>
         <div th:if="${not #lists.isEmpty(assignments)}">
+<!--            <div th:each="assignment : ${assignments}" class="assignment-item">-->
+<!--                <div style="flex: 2;">-->
+<!--                    <strong th:text="${assignment.title}">Assignment Title</strong>-->
+<!--                    <div style="font-size: 12px; color: #86868b;" th:text="'Due: ' + ${assignment.dueDate}"></div>-->
+<!--                </div>-->
+<!--                <div style="flex: 1; text-align: center;">-->
+<!--                    <span th:text="${assignment.pointsPossible} + ' pts'"></span>-->
+<!--                </div>-->
+<!--                <div style="flex: 1; text-align: center;">-->
+<!--                    <span th:if="${assignment.score != null}" class="grade-score" th:text="${assignment.score} + ' / ' + ${assignment.pointsPossible}"></span>-->
+<!--                    <span th:unless="${assignment.score != null}">Not graded</span>-->
+<!--                </div>-->
+<!--                <div>-->
+<!--                    <span th:if="${assignment.status == 'GRADED'}" class="status-badge status-graded">✓ Graded</span>-->
+<!--                    <span th:if="${assignment.status == 'SUBMITTED'}" class="status-badge status-submitted">Submitted</span>-->
+<!--                    <span th:if="${assignment.status == 'PENDING'}" class="status-badge status-pending">Pending</span>-->
+<!--                </div>-->
+<!--            </div>-->
+
             <div th:each="assignment : ${assignments}" class="assignment-item">
                 <div style="flex: 2;">
                     <strong th:text="${assignment.title}">Assignment Title</strong>
@@ -137,7 +156,16 @@
                     <span th:if="${assignment.status == 'SUBMITTED'}" class="status-badge status-submitted">Submitted</span>
                     <span th:if="${assignment.status == 'PENDING'}" class="status-badge status-pending">Pending</span>
                 </div>
+                <div>
+                    <a th:if="${assignment.filePath != null}"
+                       th:href="'/files/' + ${assignment.filePath}"
+                       class="btn btn-secondary"
+                       style="padding: 4px 12px; font-size: 12px;">
+                        📎 Download
+                    </a>
+                </div>
             </div>
+
         </div>
         <div th:if="${#lists.isEmpty(assignments)}" class="empty-state">
             No assignments submitted yet.
