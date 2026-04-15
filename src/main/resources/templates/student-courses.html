@@ -34,6 +34,12 @@
             z-index: 1000;
         }
 
+        .logo:hover {
+            text-shadow: 0 0 10px #05a3b2;
+            transform: scale(1.05);
+            transition: 0.1s ease;
+        }
+
         .logo {
             font-size: 24px;
             font-weight: 600;
@@ -345,10 +351,17 @@
 </head>
 <body>
 <nav class="navbar">
-    <a href="/" class="logo">EduFlow</a>
+    <a href="/" class="logo">
+        <span>Education </span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="#00d4ff" stroke-width="2"/>
+            <text x="6" y="15" fill="#00d4ff" font-size="8">API</text>
+        </svg>
+    </a>
     <div class="nav-links">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/courses">Courses</a>
+        <a href="/student/dashboard">Dashboard</a>
+        <a href="/student/courses">Courses</a>
+        <a href="/student/grades">Grades</a>
         <div class="user-menu">
             <span class="user-name" sec:authentication="name">User</span>
             <form th:action="@{/logout}" method="post" style="display: inline;">
@@ -394,28 +407,28 @@
     <!-- Course Grid -->
     <div th:if="${not #lists.isEmpty(courses)}" class="courses-grid">
         <div th:each="course : ${courses}" class="course-card">
-            <div class="course-banner">
-                <div class="course-icon">📚</div>
-            </div>
+            <!-- Course content -->
             <div class="course-content">
                 <div class="course-title" th:text="${course.name}">Course Name</div>
                 <div class="course-instructor" th:text="'👨‍🏫 ' + ${course.instructor}">Instructor</div>
-                <div class="course-description" th:text="${course.description}">Course description</div>
+                <div class="course-description" th:text="${course.description}">Description</div>
 
                 <div class="course-stats">
                     <span>📦 <span th:text="${course.moduleCount}">0</span> modules</span>
                     <span>👥 <span th:text="${course.enrollmentCount}">0</span> students</span>
                 </div>
 
-                <div class="course-footer">
-                    <div th:if="${course.enrolled}">
+                <div th:if="${course.enrolled}">
+                    <div class="course-footer">
                         <span class="status-badge status-enrolled">✓ Enrolled</span>
                         <span th:text="'Progress: ' + ${course.progressPct} + '%'" style="font-size: 12px; color: #34c759;"></span>
+                        <a th:href="'/student/courses/' + ${course.id}" class="btn btn-secondary">Continue →</a>
                     </div>
-                    <a th:if="${course.enrolled}" th:href="'/courses/' + ${course.id}" class="btn btn-secondary">Continue →</a>
-                    <form th:unless="${course.enrolled}" th:action="@{/enroll}" method="post" style="display: inline;">
+                </div>
+                <div th:unless="${course.enrolled}">
+                    <form th:action="@{/student/enroll}" method="post" class="enroll-form">
                         <input type="hidden" name="courseId" th:value="${course.id}">
-                        <button type="submit" class="btn">Enroll Now →</button>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Enroll Now →</button>
                     </form>
                 </div>
             </div>
@@ -442,14 +455,14 @@
 </div>
 
 <script>
-    // Auto-hide alerts after 5 seconds
+    // Auto-hide alerts after 3 seconds
     setTimeout(() => {
         document.querySelectorAll('.alert').forEach(alert => {
             alert.style.transition = 'opacity 0.3s';
             alert.style.opacity = '0';
             setTimeout(() => alert.remove(), 300);
         });
-    }, 5000);
+    }, 3000);
 </script>
 </body>
 </html>

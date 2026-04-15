@@ -639,6 +639,42 @@ public class InstructorWebController {
         }
     }
 
+//    @PostMapping("/submissions/{id}/grade")
+//    public String saveGrade(@PathVariable Long id,
+//                            @RequestParam Double score,
+//                            @RequestParam(required = false) String feedback,
+//                            RedirectAttributes redirectAttributes) {
+//        try {
+//            System.out.println("=== SAVE GRADE ===");
+//            System.out.println("Submission ID: " + id);
+//            System.out.println("Score: " + score);
+//
+//            // Get submission
+//            Submission submission = submissionRepository.findById(id).orElseThrow();
+//            Long courseId = submission.getAssignment().getModule().getCourse().getId();
+//            Long studentId = submission.getStudent().getId();
+//
+//            // Update grade
+//            submission.setScore(BigDecimal.valueOf(score));
+//            submission.setFeedback(feedback);
+//            submission.setStatus(SubmissionStatus.GRADED);
+//            submissionRepository.save(submission);
+//
+//            // Recalculate progress for this student in this course
+//            System.out.println("Recalculating progress for student " + studentId + " in course " + courseId);
+//            progressService.recalculate(studentId, courseId);
+//
+//            redirectAttributes.addFlashAttribute("message", "Grade saved successfully!");
+//            return "redirect:/instructor/courses/" + courseId + "/grade";
+//
+//        } catch (Exception e) {
+//            System.err.println("ERROR saving grade: " + e.getMessage());
+//            e.printStackTrace();
+//            redirectAttributes.addFlashAttribute("error", "Failed to save grade: " + e.getMessage());
+//            return "redirect:/instructor/submissions/" + id + "/grade";
+//        }
+//    }
+
     @GetMapping("/grading")
     public String allPendingSubmissions(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         if (userDetails == null) {

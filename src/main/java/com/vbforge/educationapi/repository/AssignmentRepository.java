@@ -37,6 +37,9 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     @Query("SELECT COUNT(s) FROM Submission s WHERE s.assignment.id = :assignmentId")
     int countSubmissionsByAssignmentId(@Param("assignmentId") Long assignmentId);
 
+//    @Query("SELECT a FROM Assignment a WHERE a.module.course.id = :courseId")
+//    List<Assignment> findByCourseId(@Param("courseId") Long courseId);
+
 
 
 }

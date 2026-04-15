@@ -85,4 +85,24 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             nativeQuery = true)
     List<Object[]> findStudentSubmissionsWithDetailsNative(@Param("studentId") Long studentId);
 
+    @Query(value = "SELECT a.id, a.title, a.due_date, s.score, s.status, c.name as course_name " +
+            "FROM submissions s " +
+            "JOIN assignments a ON a.id = s.assignment_id " +
+            "JOIN modules m ON m.id = a.module_id " +
+            "JOIN courses c ON c.id = m.course_id " +
+            "WHERE s.student_id = :studentId " +
+            "ORDER BY a.due_date ASC",
+            nativeQuery = true)
+    List<Object[]> findSubmissionsWithDetailsNative(@Param("studentId") Long studentId);
+
+    @Query(value = "SELECT a.title, c.name, s.score, a.points_possible, s.feedback, s.submitted_at, s.updated_at " +
+            "FROM submissions s " +
+            "JOIN assignments a ON a.id = s.assignment_id " +
+            "JOIN modules m ON m.id = a.module_id " +
+            "JOIN courses c ON c.id = m.course_id " +
+            "WHERE s.student_id = :studentId AND s.status = 'GRADED' " +
+            "ORDER BY s.updated_at DESC",
+            nativeQuery = true)
+    List<Object[]> findGradedSubmissionsWithDetailsNative(@Param("studentId") Long studentId);
+
 }

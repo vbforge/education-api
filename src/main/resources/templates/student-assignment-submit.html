@@ -34,6 +34,12 @@
             z-index: 1000;
         }
 
+        .logo:hover {
+            text-shadow: 0 0 10px #05a3b2;
+            transform: scale(1.05);
+            transition: 0.1s ease;
+        }
+
         .logo {
             font-size: 24px;
             font-weight: 600;
@@ -378,10 +384,17 @@
 </head>
 <body>
 <nav class="navbar">
-    <a href="/" class="logo">EduFlow</a>
+    <a href="/" class="logo">
+        <span>Education </span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="#00d4ff" stroke-width="2"/>
+            <text x="6" y="15" fill="#00d4ff" font-size="8">API</text>
+        </svg>
+    </a>
     <div class="nav-links">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/courses">Courses</a>
+        <a href="/student/dashboard">Dashboard</a>
+        <a href="/student/courses">Courses</a>
+        <a href="/student/grades">Grades</a>
         <div class="user-menu">
             <span class="user-name" sec:authentication="name">User</span>
             <form th:action="@{/logout}" method="post" style="display: inline;">
@@ -395,7 +408,7 @@
 </nav>
 
 <div class="container">
-    <a th:href="'/courses/' + ${courseId}" class="back-link">← Back to Course</a>
+    <a th:href="'/student/courses/' + ${courseId}" class="back-link">← Back to Course</a>
 
     <!-- Alert Messages -->
     <div th:if="${message}" class="alert alert-success">
@@ -415,7 +428,7 @@
     <div class="assignment-header">
         <h1 th:text="${assignment.title}">Assignment Title</h1>
         <div class="assignment-meta">
-            <span th:text="'📅 Due: ' + ${#temporals.format(assignment.dueDate, 'MMM dd, yyyy • hh:mm a')}">Due Date</span>
+            <span th:text="'📅 Due: ' + ${assignment.dueDate}">Due Date</span>
             <span class="points-badge" th:text="'⭐ ' + ${assignment.pointsPossible} + ' points'">100 points</span>
             <span th:text="'📁 ' + ${courseName}">Course Name</span>
         </div>
@@ -459,7 +472,7 @@
             <h2>📤 Submit Your Work</h2>
         </div>
         <div class="card-body">
-            <form th:action="@{/submit-assignment}" method="post" enctype="multipart/form-data">
+            <form th:action="@{/student/submit-assignment}" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="assignmentId" th:value="${assignment.id}">
 
                 <div class="file-upload" id="fileUploadZone" onclick="document.getElementById('fileInput').click()">
@@ -485,7 +498,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="font-weight: 500;">📄 Previous submission</span>
-                        <div style="font-size: 13px; color: #86868b;" th:text="'Submitted: ' + ${#temporals.format(existingSubmission.submittedAt, 'MMM dd, yyyy • hh:mm a')}">Submitted date</div>
+                        <div style="font-size: 13px; color: #86868b;" th:text="'Submitted: ' + ${existingSubmission.submittedAt}">Submitted date</div>
                     </div>
                     <span class="status-chip" th:classappend="${existingSubmission.status == 'SUBMITTED'} ? 'status-submitted' : 'status-pending'">
                             <span th:if="${existingSubmission.status == 'SUBMITTED'}">✓ Submitted</span>

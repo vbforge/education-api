@@ -34,6 +34,12 @@
             z-index: 1000;
         }
 
+        .logo:hover {
+            text-shadow: 0 0 10px #05a3b2;
+            transform: scale(1.05);
+            transition: 0.1s ease;
+        }
+
         .logo {
             font-size: 24px;
             font-weight: 600;
@@ -369,10 +375,17 @@
 </head>
 <body>
 <nav class="navbar">
-    <a href="/" class="logo">EduFlow</a>
+    <a href="/" class="logo">
+        <span>Education </span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="#00d4ff" stroke-width="2"/>
+            <text x="6" y="15" fill="#00d4ff" font-size="8">API</text>
+        </svg>
+    </a>
     <div class="nav-links">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/courses">Courses</a>
+        <a href="/student/dashboard">Dashboard</a>
+        <a href="/student/courses">Courses</a>
+        <a href="/student/grades">Grades</a>
         <div class="user-menu">
             <span class="user-name" sec:authentication="name">User</span>
             <form th:action="@{/logout}" method="post" style="display: inline;">
@@ -388,33 +401,33 @@
 <div class="container">
     <div class="welcome">
         <h1>Welcome back, <span sec:authentication="name">Student</span></h1>
-        <p>Continue your learning journey — you're making great progress.</p>
+        <p>Continue your learning journey — you're making great progress!</p>
     </div>
 
     <!-- Stats Grid -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label">Active Courses</div>
-            <div class="stat-value"><span th:text="${activeCourses}">0</span> <span class="stat-unit">courses</span></div>
+            <div class="stat-value"><span th:text="${activeCourses != null ? activeCourses : 0}">0</span> <span class="stat-unit">courses</span></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Completed Courses</div>
-            <div class="stat-value"><span th:text="${completedCourses}">0</span> <span class="stat-unit">courses</span></div>
+            <div class="stat-value"><span th:text="${completedCourses != null ? completedCourses : 0}">0</span> <span class="stat-unit">courses</span></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Completed Assignments</div>
-            <div class="stat-value"><span th:text="${completedAssignments}">0</span> <span class="stat-unit">/ <span th:text="${totalAssignments}">0</span></span></div>
+            <div class="stat-value"><span th:text="${completedAssignments != null ? completedAssignments : 0}">0</span> <span class="stat-unit">/ <span th:text="${totalAssignments != null ? totalAssignments : 0}">0</span></span></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Average Grade</div>
-            <div class="stat-value"><span th:text="${averageGrade}">0</span><span class="stat-unit">%</span></div>
+            <div class="stat-value"><span th:text="${averageGrade != null ? averageGrade : 0}">0</span><span class="stat-unit">%</span></div>
         </div>
     </div>
 
     <!-- My Courses Section -->
     <div class="section-header">
         <h2>My Courses</h2>
-        <a href="/courses">View all →</a>
+        <a href="/student/courses">View all →</a>
     </div>
 
     <div class="courses-grid">
@@ -434,7 +447,7 @@
             </div>
             <div class="course-footer">
                 <span class="status-badge status-active">● Active</span>
-                <a th:href="'/courses/' + ${course.id}" class="btn btn-secondary">Continue</a>
+                <a th:href="'/student/courses/' + ${course.id}" class="btn btn-secondary">Continue</a>
             </div>
         </div>
 
@@ -443,7 +456,7 @@
             <div style="font-size: 48px; margin-bottom: 16px;">📖</div>
             <h3 style="font-size: 20px; margin-bottom: 8px;">No courses yet</h3>
             <p style="color: #86868b; margin-bottom: 24px;">Browse the course catalog and start learning!</p>
-            <a href="/courses" class="btn btn-primary">Browse Courses →</a>
+            <a href="/student/courses" class="btn btn-primary">Browse Courses →</a>
         </div>
     </div>
 
@@ -458,7 +471,7 @@
             <div class="assignment-info">
                 <h4 th:text="${assignment.title}">Assignment Title</h4>
                 <div class="assignment-course" th:text="${assignment.courseName}">Course Name</div>
-                <div class="assignment-due" th:text="'Due: ' + ${#temporals.format(assignment.dueDate, 'MMM dd, yyyy • hh:mm a')}">Due Date</div>
+                <div class="assignment-due" th:text="'Due: ' + ${assignment.dueDate}">Due Date</div>
             </div>
             <div class="assignment-status">
                 <div th:if="${assignment.status == 'SUBMITTED'}" class="score" th:text="${assignment.score} + '/100'">85/100</div>

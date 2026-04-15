@@ -34,6 +34,12 @@
             z-index: 1000;
         }
 
+        .logo:hover {
+            text-shadow: 0 0 10px #05a3b2;
+            transform: scale(1.05);
+            transition: 0.1s ease;
+        }
+
         .logo {
             font-size: 24px;
             font-weight: 600;
@@ -373,10 +379,17 @@
 </head>
 <body>
 <nav class="navbar">
-    <a href="/" class="logo">EduFlow</a>
+    <a href="/" class="logo">
+        <span>Education </span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="#00d4ff" stroke-width="2"/>
+            <text x="6" y="15" fill="#00d4ff" font-size="8">API</text>
+        </svg>
+    </a>
     <div class="nav-links">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/courses">Courses</a>
+        <a href="/student/dashboard">Dashboard</a>
+        <a href="/student/courses">Courses</a>
+        <a href="/student/grades">Grades</a>
         <div class="user-menu">
             <span class="user-name" sec:authentication="name">User</span>
             <form th:action="@{/logout}" method="post" style="display: inline;">
@@ -390,7 +403,7 @@
 </nav>
 
 <div class="container">
-    <a href="/courses" class="back-link">← Back to Courses</a>
+    <a href="/student/courses" class="back-link">← Back to Courses</a>
 
     <div th:if="${message}" class="alert alert-success">
         <span>✓</span>
@@ -422,15 +435,15 @@
                     <div th:each="assignment : ${module.assignments}" class="assignment-row">
                         <div>
                             <div class="assignment-name" th:text="${assignment.title}">Assignment Title</div>
-                            <div class="assignment-due" th:text="'Due: ' + ${#temporals.format(assignment.dueDate, 'MMM dd, yyyy • hh:mm a')}">Due Date</div>
+                            <div class="assignment-due" th:text="'Due: ' + ${assignment.dueDate}">Due Date</div>
                         </div>
                         <div style="text-align: right;">
                             <div class="assignment-points" th:text="${assignment.pointsPossible} + ' pts'">100 pts</div>
                             <div th:if="${assignment.status == 'SUBMITTED'}" class="status-chip status-submitted">✓ Submitted</div>
-                            <div th:if="${assignment.status == 'GRADED'}" class="status-chip status-graded" th:text="'⭐ ' + ${assignment.score} + '/100'">Graded</div>
+                            <div th:if="${assignment.status == 'GRADED'}" class="status-chip status-graded" th:text="'⭐ ' + ${assignment.score} + '/' + ${assignment.pointsPossible}">Graded</div>
                             <div th:if="${assignment.status == 'PENDING'}" class="status-chip status-pending">⏳ Pending</div>
-                            <a th:if="${assignment.status != 'SUBMITTED' and assignment.status != 'GRADED'}"
-                               th:href="'/assignments/' + ${assignment.id} + '/submit'"
+                            <a th:if="${assignment.status == 'PENDING'}"
+                               th:href="'/student/assignments/' + ${assignment.id} + '/submit'"
                                class="btn btn-primary" style="padding: 6px 16px; font-size: 12px; margin-top: 8px; display: inline-block;">
                                 Submit →
                             </a>
@@ -497,14 +510,14 @@
         }
     }
 
-    // Auto-hide alerts after 5 seconds
+    // Auto-hide alerts after 3 seconds
     setTimeout(() => {
         document.querySelectorAll('.alert').forEach(alert => {
             alert.style.transition = 'opacity 0.3s';
             alert.style.opacity = '0';
             setTimeout(() => alert.remove(), 300);
         });
-    }, 5000);
+    }, 3000);
 </script>
 </body>
 </html>
