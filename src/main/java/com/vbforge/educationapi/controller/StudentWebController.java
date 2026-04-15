@@ -452,36 +452,19 @@ public class StudentWebController {
             System.out.println("=== STUDENT ANNOUNCEMENTS DEBUG ===");
             System.out.println("Student: " + student.getEmail());
 
-            // Get all enrollments for this student
-            List<Enrollment> enrollments = enrollmentRepository.findByStudentId(student.getId());
-            System.out.println("Enrollments found: " + enrollments.size());
+            // Use native query to get announcements directly with course names
+            List<Object[]> results = announcementRepository.findAnnouncementsForStudentNative(student.getId());
 
             List<Map<String, Object>> announcements = new ArrayList<>();
-            for (Enrollment enrollment : enrollments) {
-                Long courseId = enrollment.getCourse().getId();
-                String courseName = enrollment.getCourse().getName();
-                System.out.println("Checking course: " + courseName + " (ID: " + courseId + ")");
-
-                List<Announcement> anns = announcementRepository.findByCourseIdOrderByPostedAtDesc(courseId);
-                System.out.println("  Announcements found: " + anns.size());
-
-                for (Announcement ann : anns) {
-                    Map<String, Object> annMap = new HashMap<>();
-                    annMap.put("title", ann.getTitle());
-                    annMap.put("message", ann.getMessage());
-                    annMap.put("courseName", courseName);
-                    annMap.put("postedAt", ann.getPostedAt());
-                    announcements.add(annMap);
-                    System.out.println("  Added: " + ann.getTitle());
-                }
+            for (Object[] row : results) {
+                Map<String, Object> annMap = new HashMap<>();
+                annMap.put("title", row[0]);      // announcement title
+                annMap.put("message", row[1]);    // announcement message
+                annMap.put("courseName", row[2]); // course name
+                annMap.put("postedAt", row[3]);   // posted at
+                announcements.add(annMap);
+                System.out.println("Added announcement: " + row[0] + " for course: " + row[2]);
             }
-
-            // Sort by posted date descending (newest first)
-            announcements.sort((a, b) -> {
-                if (a.get("postedAt") == null) return 1;
-                if (b.get("postedAt") == null) return -1;
-                return ((LocalDateTime) b.get("postedAt")).compareTo((LocalDateTime) a.get("postedAt"));
-            });
 
             System.out.println("Total announcements for student: " + announcements.size());
 
@@ -497,5 +480,16 @@ public class StudentWebController {
 
         return "student-announcements";
     }
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
