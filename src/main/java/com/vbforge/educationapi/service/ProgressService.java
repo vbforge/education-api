@@ -27,30 +27,47 @@ public class ProgressService {
 
     // called after every graded submission
     public void recalculate(Long studentId, Long courseId) {
+        log.info("Recalculating progress for studentId={}, courseId={}", studentId, courseId);
+        
         Enrollment enrollment = enrollmentRepository
                 .findByStudentIdAndCourseId(studentId, courseId)
                 .orElse(null);
 
         if (enrollment == null || enrollment.getStatus() == EnrollmentStatus.DROPPED) {
-            log.warn("Skipping progress recalc — enrollment not found or dropped. " +
-                     "studentId={}, courseId={}", studentId, courseId);
+            log.warn("Skipping progress recalc — enrollment not found or dropped");
             return;
         }
 
-        int total  = assignmentRepository.findByCourseId(courseId).size();
-        int graded = submissionRepository.countGradedByStudentAndCourse(studentId, courseId);
+        // Get all assignments for this course
+        List<Assignment> allAssignments = assignmentRepository.findByCourseId(courseId);
+        int totalAssignments = allAssignments.size();
+        log.info("Total assignments in course: {}", totalAssignments);
+        
+        if (totalAssignments == 0) {
+            enrollment.setProgressPct(BigDecimal.ZERO);
+            enrollmentRepository.save(enrollment);
+            return;
+        }
 
-        // avoid division by zero
-        BigDecimal progress = total == 0
-                ? BigDecimal.ZERO
-                : BigDecimal.valueOf(graded)
-                        .divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100))
-                        .setScale(2, RoundingMode.HALF_UP);
+        // Get graded submissions for this student in this course
+        List<Submission> studentSubmissions = submissionRepository.findByStudentId(studentId);
+        
+        long gradedCount = studentSubmissions.stream()
+                .filter(s -> s.getAssignment().getModule().getCourse().getId().equals(courseId))
+                .filter(s -> s.getStatus() == SubmissionStatus.GRADED)
+                .count();
+        
+        log.info("Graded assignments count: {}", gradedCount);
+
+        // Calculate progress percentage
+        BigDecimal progress = BigDecimal.valueOf(gradedCount)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(totalAssignments), 2, RoundingMode.HALF_UP);
 
         enrollment.setProgressPct(progress);
+        log.info("Progress calculated: {}%", progress);
 
-        // auto-complete if 100% done
+        // Auto-complete if 100% done
         if (progress.compareTo(BigDecimal.valueOf(100)) == 0) {
             enrollment.setStatus(EnrollmentStatus.COMPLETED);
             notificationService.sendCourseCompletionNotification(
@@ -61,76 +78,17 @@ public class ProgressService {
                             ? enrollment.getGrade().toPlainString()
                             : "Pending"
             );
+            log.info("Course marked as completed!");
         }
 
         enrollmentRepository.save(enrollment);
-        log.debug("Progress updated: studentId={}, courseId={}, progress={}%",
-                studentId, courseId, progress);
+        log.info("Progress saved successfully");
     }
 
-//    public void recalculate(Long studentId, Long courseId) {
-//        Enrollment enrollment = enrollmentRepository
-//                .findByStudentIdAndCourseId(studentId, courseId)
-//                .orElse(null);
-//
-//        if (enrollment == null || enrollment.getStatus() == EnrollmentStatus.DROPPED) {
-//            log.warn("Skipping progress recalc — enrollment not found or dropped. " +
-//                    "studentId={}, courseId={}", studentId, courseId);
-//            return;
-//        }
-//
-//        // Get all assignments for this course
-//        List<Assignment> assignments = assignmentRepository.findByCourseId(courseId);
-//        int totalAssignments = assignments.size();
-//
-//        // Get graded submissions for this student in this course
-//        List<Submission> gradedSubmissions = submissionRepository.findByStudentId(studentId)
-//                .stream()
-//                .filter(s -> s.getAssignment().getModule().getCourse().getId().equals(courseId))
-//                .filter(s -> s.getStatus() == SubmissionStatus.GRADED)
-//                .collect(Collectors.toList());
-//
-//        int gradedCount = gradedSubmissions.size();
-//
-//        // Calculate progress percentage
-//        BigDecimal progress = totalAssignments == 0
-//                ? BigDecimal.ZERO
-//                : BigDecimal.valueOf(gradedCount)
-//                  .divide(BigDecimal.valueOf(totalAssignments), 4, RoundingMode.HALF_UP)
-//                  .multiply(BigDecimal.valueOf(100))
-//                  .setScale(2, RoundingMode.HALF_UP);
-//
-//        enrollment.setProgressPct(progress);
-//
-//        // Calculate average grade if all assignments are graded
-//        if (gradedCount == totalAssignments && totalAssignments > 0) {
-//            double avgScore = gradedSubmissions.stream()
-//                    .mapToDouble(s -> s.getScore().doubleValue())
-//                    .average()
-//                    .orElse(0);
-//            double maxPoints = assignments.stream()
-//                    .mapToDouble(a -> a.getPointsPossible())
-//                    .sum();
-//            double gradePercentage = maxPoints > 0 ? (avgScore / maxPoints) * 100 : 0;
-//            enrollment.setGrade(BigDecimal.valueOf(gradePercentage).setScale(2, RoundingMode.HALF_UP));
-//            enrollment.setStatus(EnrollmentStatus.COMPLETED);
-//
-//            // Send notification
-//            notificationService.sendCourseCompletionNotification(
-//                    enrollment.getStudent().getEmail(),
-//                    enrollment.getStudent().getName(),
-//                    enrollment.getCourse().getName(),
-//                    enrollment.getGrade().toPlainString()
-//            );
-//        }
-//
-//        enrollmentRepository.save(enrollment);
-//        log.info("Progress updated: studentId={}, courseId={}, progress={}% ({} of {} assignments graded)",
-//                studentId, courseId, progress, gradedCount, totalAssignments);
-//    }
-
     // calculates and saves the final grade when instructor finalizes
-    public void finalize(Long studentId, Long courseId) {
+    public void finalizeGrade(Long studentId, Long courseId) {
+        log.info("Finalizing grade for studentId={}, courseId={}", studentId, courseId);
+        
         Enrollment enrollment = enrollmentRepository
                 .findByStudentIdAndCourseId(studentId, courseId)
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -138,30 +96,45 @@ public class ProgressService {
                         ", courseId=" + courseId
                 ));
 
-        // average of all scored submissions for this student in this course
-        List<BigDecimal> scores = submissionRepository
+        // Get all graded submissions for this student in this course
+        List<Submission> gradedSubmissions = submissionRepository
                 .findByStudentId(studentId)
                 .stream()
                 .filter(s -> s.getAssignment().getModule().getCourse().getId().equals(courseId))
                 .filter(s -> s.getScore() != null)
-                .map(s -> s.getScore())
-                .toList();
+                .collect(Collectors.toList());
 
-        if (scores.isEmpty()) {
+        if (gradedSubmissions.isEmpty()) {
             log.warn("No graded submissions found for finalize. studentId={}, courseId={}",
                     studentId, courseId);
             return;
         }
 
-        BigDecimal average = scores.stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(BigDecimal.valueOf(scores.size()), 2, RoundingMode.HALF_UP);
+        // Calculate average score percentage
+        double totalEarned = 0;
+        double totalPossible = 0;
+        
+        for (Submission submission : gradedSubmissions) {
+            totalEarned += submission.getScore().doubleValue();
+            totalPossible += submission.getAssignment().getPointsPossible();
+        }
+        
+        double gradePercentage = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+        BigDecimal finalGrade = BigDecimal.valueOf(gradePercentage).setScale(2, RoundingMode.HALF_UP);
 
-        enrollment.setGrade(average);
+        enrollment.setGrade(finalGrade);
         enrollment.setStatus(EnrollmentStatus.COMPLETED);
         enrollmentRepository.save(enrollment);
 
-        log.info("Final grade set: studentId={}, courseId={}, grade={}",
-                studentId, courseId, average);
+        log.info("Final grade set: studentId={}, courseId={}, grade={}%",
+                studentId, courseId, finalGrade);
+        
+        // Send completion notification
+        notificationService.sendCourseCompletionNotification(
+                enrollment.getStudent().getEmail(),
+                enrollment.getStudent().getName(),
+                enrollment.getCourse().getName(),
+                finalGrade.toPlainString()
+        );
     }
 }

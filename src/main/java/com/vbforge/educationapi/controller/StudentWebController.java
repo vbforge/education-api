@@ -10,6 +10,7 @@ import com.vbforge.educationapi.dto.submission.SubmissionRequestDto;
 import com.vbforge.educationapi.repository.*;
 import com.vbforge.educationapi.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/student")
 @RequiredArgsConstructor
+@Slf4j
 public class StudentWebController {
 
     private final StudentService studentService;
@@ -390,45 +392,6 @@ public class StudentWebController {
         }
     }
 
-//    @PostMapping("/submit-assignment")
-//    public String submitAssignment(@RequestParam Long assignmentId,
-//                                   @RequestParam(required = false) MultipartFile file,
-//                                   @RequestParam(required = false) String comment,
-//                                   @AuthenticationPrincipal UserDetails userDetails,
-//                                   RedirectAttributes redirectAttributes) {
-//        try {
-//            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
-//
-//            // Store file if provided
-//            String filePath = null;
-//            if (file != null && !file.isEmpty()) {
-//                filePath = storageService.store(file, student.getId(), assignmentId);
-//            }
-//
-//            // Create submission DTO
-//            var submissionDto = new com.vbforge.educationapi.dto.submission.SubmissionRequestDto();
-//            submissionDto.setAssignmentId(assignmentId);
-//            submissionDto.setStudentId(student.getId());
-//
-//            // Submit the assignment
-//            submissionService.submit(submissionDto, filePath);
-//
-//            // Recalculate progress for this student in this course
-//            AssignmentResponseDto assignment = assignmentService.findById(assignmentId);
-//            Long courseId = assignment.getCourseId();
-//            System.out.println("Recalculating progress after submission for student " + student.getId() + " in course " + courseId);
-//            progressService.recalculate(student.getId(), courseId);
-//
-//            redirectAttributes.addFlashAttribute("message", "Assignment submitted successfully!");
-//            return "redirect:/student/courses/" + courseId;
-//
-//        } catch (Exception e) {
-//            System.err.println("Submission error: " + e.getMessage());
-//            e.printStackTrace();
-//            redirectAttributes.addFlashAttribute("error", "Submission failed: " + e.getMessage());
-//            return "redirect:/student/assignments/" + assignmentId + "/submit";
-//        }
-//    }
 
     @GetMapping("/grades")
     public String viewGrades(@AuthenticationPrincipal UserDetails userDetails, Model model) {
@@ -479,39 +442,57 @@ public class StudentWebController {
         return "student-grades";
     }
 
+
     @GetMapping("/announcements")
     public String viewAnnouncements(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         if (userDetails == null) return "redirect:/login";
 
         try {
             Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+            System.out.println("=== STUDENT ANNOUNCEMENTS DEBUG ===");
+            System.out.println("Student: " + student.getEmail());
+
+            // Get all enrollments for this student
             List<Enrollment> enrollments = enrollmentRepository.findByStudentId(student.getId());
+            System.out.println("Enrollments found: " + enrollments.size());
 
             List<Map<String, Object>> announcements = new ArrayList<>();
             for (Enrollment enrollment : enrollments) {
-                List<Announcement> anns = announcementRepository.findByCourseIdOrderByPostedAtDesc(enrollment.getCourse().getId());
+                Long courseId = enrollment.getCourse().getId();
+                String courseName = enrollment.getCourse().getName();
+                System.out.println("Checking course: " + courseName + " (ID: " + courseId + ")");
+
+                List<Announcement> anns = announcementRepository.findByCourseIdOrderByPostedAtDesc(courseId);
+                System.out.println("  Announcements found: " + anns.size());
+
                 for (Announcement ann : anns) {
                     Map<String, Object> annMap = new HashMap<>();
                     annMap.put("title", ann.getTitle());
                     annMap.put("message", ann.getMessage());
-                    annMap.put("courseName", enrollment.getCourse().getName());
+                    annMap.put("courseName", courseName);
                     annMap.put("postedAt", ann.getPostedAt());
                     announcements.add(annMap);
+                    System.out.println("  Added: " + ann.getTitle());
                 }
             }
 
-            // Sort by posted date descending
+            // Sort by posted date descending (newest first)
             announcements.sort((a, b) -> {
                 if (a.get("postedAt") == null) return 1;
                 if (b.get("postedAt") == null) return -1;
                 return ((LocalDateTime) b.get("postedAt")).compareTo((LocalDateTime) a.get("postedAt"));
             });
 
+            System.out.println("Total announcements for student: " + announcements.size());
+
             model.addAttribute("announcements", announcements);
             model.addAttribute("title", "Announcements");
 
         } catch (Exception e) {
+            System.err.println("Error in viewAnnouncements: " + e.getMessage());
+            e.printStackTrace();
             model.addAttribute("error", e.getMessage());
+            model.addAttribute("announcements", new ArrayList<>());
         }
 
         return "student-announcements";

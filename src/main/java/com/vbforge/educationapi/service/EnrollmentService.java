@@ -96,13 +96,11 @@ public class EnrollmentService {
 
     // instructor manually finalizes a student's course grade
     public EnrollmentResponseDto finalizeGrade(Long studentId, Long courseId) {
-        progressService.finalize(studentId, courseId);
+        progressService.finalizeGrade(studentId, courseId);  // Make sure this matches the method name
 
         Enrollment enrollment = enrollmentRepository
                 .findByStudentIdAndCourseId(studentId, courseId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Enrollment not found"
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found"));
         return EnrollmentMapper.toDto(enrollment);
     }
 
