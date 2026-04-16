@@ -78,7 +78,8 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             nativeQuery = true)
     List<Object[]> findStudentSubmissionsWithDetailsNative(@Param("studentId") Long studentId);
 
-    @Query(value = "SELECT a.id, a.title, a.due_date, s.score, s.status, c.name as course_name " +
+
+    @Query(value = "SELECT a.id, a.title, a.due_date, s.score, s.status, c.name as course_name, a.points_possible " +
             "FROM submissions s " +
             "JOIN assignments a ON a.id = s.assignment_id " +
             "JOIN modules m ON m.id = a.module_id " +

@@ -45,109 +45,6 @@ public class StudentWebController {
     private final SubmissionRepository submissionRepository;
     private final AnnouncementRepository announcementRepository;
 
-//    @GetMapping("/dashboard")
-//    public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-//        if (userDetails == null) {
-//            return "redirect:/login";
-//        }
-//
-//        try {
-//            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
-//            Long studentId = student.getId();
-//
-//            System.out.println("=== STUDENT DASHBOARD DEBUG ===");
-//            System.out.println("Student: " + student.getName() + " (ID: " + studentId + ")");
-//
-//            // Use native query to get enrollments with course data
-//            List<Object[]> enrollmentResults = enrollmentRepository.findEnrollmentsWithCourseDataNative(studentId);
-//            System.out.println("Enrollments found: " + enrollmentResults.size());
-//
-//            long activeCourses = 0;
-//            long completedCourses = 0;
-//            List<Map<String, Object>> courses = new ArrayList<>();
-//
-//            for (Object[] row : enrollmentResults) {
-//                String status = (String) row[4];
-//                if (!"DROPPED".equals(status)) {
-//                    if ("ACTIVE".equals(status)) activeCourses++;
-//                    if ("COMPLETED".equals(status)) completedCourses++;
-//
-//                    Map<String, Object> courseMap = new HashMap<>();
-//                    courseMap.put("id", row[0]);
-//                    courseMap.put("name", row[1]);
-//                    courseMap.put("instructor", row[2] != null ? row[2] : "Staff");
-//                    courseMap.put("progressPct", row[3] != null ? row[3] : 0);
-//                    courses.add(courseMap);
-//                    System.out.println("  Added course: " + row[1] + " (Progress: " + row[3] + "%)");
-//                }
-//            }
-//
-//            // Get submissions with assignment data (already ordered by due_date in query)
-//            List<Object[]> submissionResults = submissionRepository.findSubmissionsWithDetailsNative(studentId);
-//            long completedAssignments = 0;
-//            double totalScore = 0;
-//            int gradedCount = 0;
-//            List<Map<String, Object>> upcomingAssignments = new ArrayList<>();
-//
-//            for (Object[] row : submissionResults) {
-//                String status = (String) row[4];
-//                if ("GRADED".equals(status)) {
-//                    completedAssignments++;
-//                    if (row[3] != null) {
-//                        totalScore += ((Number) row[3]).doubleValue();
-//                        gradedCount++;
-//                    }
-//                }
-//
-//                if ("PENDING".equals(status) && row[2] != null) {
-//                    Map<String, Object> assignmentMap = new HashMap<>();
-//                    assignmentMap.put("id", row[0]);
-//                    assignmentMap.put("title", row[1]);
-//                    assignmentMap.put("dueDate", row[2]); // Keep as Timestamp, don't convert
-//                    assignmentMap.put("score", row[3]);
-//                    assignmentMap.put("status", row[4]);
-//                    assignmentMap.put("courseName", row[5]);
-//                    upcomingAssignments.add(assignmentMap);
-//                    System.out.println("  Added upcoming assignment: " + row[1]);
-//                }
-//            }
-//
-//            // NO SORTING HERE - the query already orders by due_date ASC
-//
-//            double avgGrade = gradedCount > 0 ? (totalScore / gradedCount) : 0;
-//            int totalAssignments = submissionResults.size();
-//
-//            model.addAttribute("studentName", student.getName());
-//            model.addAttribute("activeCourses", activeCourses);
-//            model.addAttribute("completedCourses", completedCourses);
-//            model.addAttribute("completedAssignments", completedAssignments);
-//            model.addAttribute("totalAssignments", totalAssignments);
-//            model.addAttribute("averageGrade", Math.round(avgGrade * 10) / 10.0);
-//            model.addAttribute("courses", courses);
-//            model.addAttribute("upcomingAssignments", upcomingAssignments);
-//            model.addAttribute("title", "Student Dashboard");
-//
-//            System.out.println("Dashboard data - Active: " + activeCourses + ", Courses: " + courses.size() +
-//                    ", Assignments: " + upcomingAssignments.size());
-//
-//
-//
-//        } catch (Exception e) {
-//            System.err.println("ERROR in student dashboard: " + e.getMessage());
-//            e.printStackTrace();
-//            model.addAttribute("error", e.getMessage());
-//            model.addAttribute("activeCourses", 0);
-//            model.addAttribute("completedCourses", 0);
-//            model.addAttribute("completedAssignments", 0);
-//            model.addAttribute("totalAssignments", 0);
-//            model.addAttribute("averageGrade", 0);
-//            model.addAttribute("courses", new ArrayList<>());
-//            model.addAttribute("upcomingAssignments", new ArrayList<>());
-//        }
-//
-//        return "student-dashboard";
-//    }
-
 
     @GetMapping("/dashboard")
     public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
@@ -510,19 +407,19 @@ public class StudentWebController {
             Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
             Long studentId = student.getId();
 
-            // Get all submissions with assignment details
+            // Get all submissions with assignment details including points_possible
             List<Object[]> results = submissionRepository.findSubmissionsWithDetailsNative(studentId);
 
             List<Map<String, Object>> assignments = new ArrayList<>();
             for (Object[] row : results) {
                 Map<String, Object> assignment = new HashMap<>();
-                assignment.put("id", row[0]);      // assignment id
-                assignment.put("title", row[1]);   // assignment title
-                assignment.put("dueDate", row[2]); // due date
-                assignment.put("score", row[3]);   // score
-                assignment.put("status", row[4]);  // status
-                assignment.put("courseName", row[5]); // course name
-                assignment.put("pointsPossible", 0); // Need to get from assignment
+                assignment.put("id", row[0]);           // assignment id
+                assignment.put("title", row[1]);        // assignment title
+                assignment.put("dueDate", row[2]);      // due date
+                assignment.put("score", row[3]);        // score
+                assignment.put("status", row[4]);       // status
+                assignment.put("courseName", row[5]);   // course name
+                assignment.put("pointsPossible", row[6]); // points possible
                 assignments.add(assignment);
             }
 
