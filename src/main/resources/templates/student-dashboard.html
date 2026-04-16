@@ -464,7 +464,7 @@
     <!-- Upcoming Assignments -->
     <div class="section-header">
         <h2>Upcoming Assignments</h2>
-        <a href="/assignments">View all →</a>
+        <a href="/student/assignments">View all →</a>
     </div>
 
     <div class="assignments-list">
@@ -479,7 +479,7 @@
                 <div th:if="${assignment.status == 'PENDING'}" class="pending">⏳ Pending</div>
                 <div th:if="${assignment.status == 'GRADED'}" class="score" th:text="${assignment.score} + '/100'">92/100</div>
                 <a th:if="${assignment.status == 'PENDING'}"
-                   th:href="'/assignments/' + ${assignment.id} + '/submit'"
+                   th:href="'/student/assignments/' + ${assignment.id} + '/submit'"
                    class="btn btn-primary" style="padding: 6px 16px; font-size: 12px; margin-top: 8px;">
                     Submit →
                 </a>
