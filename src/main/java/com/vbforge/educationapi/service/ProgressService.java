@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -27,65 +26,79 @@ public class ProgressService {
 
     // called after every graded submission
     public void recalculate(Long studentId, Long courseId) {
-        log.info("Recalculating progress for studentId={}, courseId={}", studentId, courseId);
+        log.info("=== RECALCULATE PROGRESS ===");
+        log.info("Student ID: {}, Course ID: {}", studentId, courseId);
         
         Enrollment enrollment = enrollmentRepository
                 .findByStudentIdAndCourseId(studentId, courseId)
                 .orElse(null);
 
-        if (enrollment == null || enrollment.getStatus() == EnrollmentStatus.DROPPED) {
-            log.warn("Skipping progress recalc — enrollment not found or dropped");
+        if (enrollment == null) {
+            log.warn("Enrollment not found!");
             return;
         }
-
-        // Get all assignments for this course
-        List<Assignment> allAssignments = assignmentRepository.findByCourseId(courseId);
-        int totalAssignments = allAssignments.size();
-        log.info("Total assignments in course: {}", totalAssignments);
+        
+        // Get total assignments in this course
+        List<Assignment> assignments = assignmentRepository.findByCourseId(courseId);
+        int totalAssignments = assignments.size();
+        log.info("Total assignments: {}", totalAssignments);
         
         if (totalAssignments == 0) {
             enrollment.setProgressPct(BigDecimal.ZERO);
             enrollmentRepository.save(enrollment);
             return;
         }
-
-        // Get graded submissions for this student in this course
-        List<Submission> studentSubmissions = submissionRepository.findByStudentId(studentId);
         
-        long gradedCount = studentSubmissions.stream()
-                .filter(s -> s.getAssignment().getModule().getCourse().getId().equals(courseId))
-                .filter(s -> s.getStatus() == SubmissionStatus.GRADED)
-                .count();
-        
+        // Count graded submissions for this student in this course
+        int gradedCount = submissionRepository.countGradedByStudentAndCourse(studentId, courseId);
         log.info("Graded assignments count: {}", gradedCount);
-
+        
         // Calculate progress percentage
-        BigDecimal progress = BigDecimal.valueOf(gradedCount)
-                .multiply(BigDecimal.valueOf(100))
-                .divide(BigDecimal.valueOf(totalAssignments), 2, RoundingMode.HALF_UP);
-
-        enrollment.setProgressPct(progress);
+        double progressValue = (gradedCount * 100.0) / totalAssignments;
+        BigDecimal progress = BigDecimal.valueOf(progressValue).setScale(2, RoundingMode.HALF_UP);
+        
         log.info("Progress calculated: {}%", progress);
-
-        // Auto-complete if 100% done
-        if (progress.compareTo(BigDecimal.valueOf(100)) == 0) {
-            enrollment.setStatus(EnrollmentStatus.COMPLETED);
-            notificationService.sendCourseCompletionNotification(
-                    enrollment.getStudent().getEmail(),
-                    enrollment.getStudent().getName(),
-                    enrollment.getCourse().getName(),
-                    enrollment.getGrade() != null
-                            ? enrollment.getGrade().toPlainString()
-                            : "Pending"
-            );
-            log.info("Course marked as completed!");
+        
+        enrollment.setProgressPct(progress);
+        
+        // If all assignments are graded, calculate final grade
+        if (gradedCount == totalAssignments && totalAssignments > 0) {
+            // Get all graded submissions for this student in this course
+            List<Submission> gradedSubmissions = submissionRepository.findByStudentId(studentId)
+                    .stream()
+                    .filter(s -> s.getAssignment().getModule().getCourse().getId().equals(courseId))
+                    .filter(s -> s.getScore() != null)
+                    .toList();
+            
+            double totalEarned = 0;
+            double totalPossible = 0;
+            
+            for (Submission submission : gradedSubmissions) {
+                totalEarned += submission.getScore().doubleValue();
+                totalPossible += submission.getAssignment().getPointsPossible();
+            }
+            
+            if (totalPossible > 0) {
+                double gradePercentage = (totalEarned / totalPossible) * 100;
+                BigDecimal finalGrade = BigDecimal.valueOf(gradePercentage).setScale(2, RoundingMode.HALF_UP);
+                enrollment.setGrade(finalGrade);
+                enrollment.setStatus(EnrollmentStatus.COMPLETED);
+                log.info("Course completed! Final grade: {}%", finalGrade);
+                
+                notificationService.sendCourseCompletionNotification(
+                        enrollment.getStudent().getEmail(),
+                        enrollment.getStudent().getName(),
+                        enrollment.getCourse().getName(),
+                        finalGrade.toPlainString()
+                );
+            }
         }
-
+        
         enrollmentRepository.save(enrollment);
-        log.info("Progress saved successfully");
+        log.info("Progress saved successfully!");
     }
 
-    // calculates and saves the final grade when instructor finalizes
+    // called when instructor manually finalizes a student's course grade
     public void finalizeGrade(Long studentId, Long courseId) {
         log.info("Finalizing grade for studentId={}, courseId={}", studentId, courseId);
         
@@ -96,21 +109,18 @@ public class ProgressService {
                         ", courseId=" + courseId
                 ));
 
-        // Get all graded submissions for this student in this course
         List<Submission> gradedSubmissions = submissionRepository
                 .findByStudentId(studentId)
                 .stream()
                 .filter(s -> s.getAssignment().getModule().getCourse().getId().equals(courseId))
                 .filter(s -> s.getScore() != null)
-                .collect(Collectors.toList());
+                .toList();
 
         if (gradedSubmissions.isEmpty()) {
-            log.warn("No graded submissions found for finalize. studentId={}, courseId={}",
-                    studentId, courseId);
+            log.warn("No graded submissions found for finalize");
             return;
         }
 
-        // Calculate average score percentage
         double totalEarned = 0;
         double totalPossible = 0;
         
@@ -126,10 +136,8 @@ public class ProgressService {
         enrollment.setStatus(EnrollmentStatus.COMPLETED);
         enrollmentRepository.save(enrollment);
 
-        log.info("Final grade set: studentId={}, courseId={}, grade={}%",
-                studentId, courseId, finalGrade);
+        log.info("Final grade set: {}%", finalGrade);
         
-        // Send completion notification
         notificationService.sendCourseCompletionNotification(
                 enrollment.getStudent().getEmail(),
                 enrollment.getStudent().getName(),

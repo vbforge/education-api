@@ -592,17 +592,18 @@ public class InstructorWebController {
         return "instructor-grade-submission";
     }
 
+
     @PostMapping("/submissions/{id}/grade")
     public String saveGrade(@PathVariable Long id,
                             @RequestParam Double score,
                             @RequestParam(required = false) String feedback,
                             RedirectAttributes redirectAttributes) {
         try {
-            System.out.println("=== SAVE GRADE ===");
+            System.out.println("=== SAVE GRADE DEBUG ===");
             System.out.println("Submission ID: " + id);
             System.out.println("Score: " + score);
 
-            // First, get the course ID using native query to avoid lazy loading
+            // First, get the course ID using the native query (no lazy loading)
             List<Object[]> results = submissionRepository.findSubmissionByIdNative(id);
             if (results.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "Submission not found");
@@ -611,14 +612,19 @@ public class InstructorWebController {
 
             Object[] row = results.get(0);
             Long courseId = (Long) row[5];  // course_id is at index 5
+            Long studentId = null; // We need to get student ID too
+
             System.out.println("Course ID from native query: " + courseId);
 
-            // Now update the submission using regular JPA (this works for simple update)
+            // Now update the submission using regular JPA
             Submission submission = submissionRepository.findById(id).orElse(null);
             if (submission == null) {
                 redirectAttributes.addFlashAttribute("error", "Submission not found");
                 return "redirect:/instructor/dashboard";
             }
+
+            studentId = submission.getStudent().getId();
+            System.out.println("Student ID: " + studentId);
 
             // Update the submission
             submission.setScore(BigDecimal.valueOf(score));
@@ -626,7 +632,18 @@ public class InstructorWebController {
             submission.setStatus(SubmissionStatus.GRADED);
             submissionRepository.save(submission);
 
-            System.out.println("Grade saved successfully!");
+            System.out.println("Submission saved with status: GRADED");
+
+            // Recalculate progress for this student in this course
+            System.out.println("Calling progressService.recalculate...");
+            progressService.recalculate(studentId, courseId);
+            System.out.println("Progress recalculation completed");
+
+            // Verify the update
+            Enrollment enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, courseId).orElse(null);
+            if (enrollment != null) {
+                System.out.println("After recalc - Progress: " + enrollment.getProgressPct() + "%, Grade: " + enrollment.getGrade());
+            }
 
             redirectAttributes.addFlashAttribute("message", "Grade saved successfully!");
             return "redirect:/instructor/courses/" + courseId + "/grade";
@@ -639,41 +656,6 @@ public class InstructorWebController {
         }
     }
 
-//    @PostMapping("/submissions/{id}/grade")
-//    public String saveGrade(@PathVariable Long id,
-//                            @RequestParam Double score,
-//                            @RequestParam(required = false) String feedback,
-//                            RedirectAttributes redirectAttributes) {
-//        try {
-//            System.out.println("=== SAVE GRADE ===");
-//            System.out.println("Submission ID: " + id);
-//            System.out.println("Score: " + score);
-//
-//            // Get submission
-//            Submission submission = submissionRepository.findById(id).orElseThrow();
-//            Long courseId = submission.getAssignment().getModule().getCourse().getId();
-//            Long studentId = submission.getStudent().getId();
-//
-//            // Update grade
-//            submission.setScore(BigDecimal.valueOf(score));
-//            submission.setFeedback(feedback);
-//            submission.setStatus(SubmissionStatus.GRADED);
-//            submissionRepository.save(submission);
-//
-//            // Recalculate progress for this student in this course
-//            System.out.println("Recalculating progress for student " + studentId + " in course " + courseId);
-//            progressService.recalculate(studentId, courseId);
-//
-//            redirectAttributes.addFlashAttribute("message", "Grade saved successfully!");
-//            return "redirect:/instructor/courses/" + courseId + "/grade";
-//
-//        } catch (Exception e) {
-//            System.err.println("ERROR saving grade: " + e.getMessage());
-//            e.printStackTrace();
-//            redirectAttributes.addFlashAttribute("error", "Failed to save grade: " + e.getMessage());
-//            return "redirect:/instructor/submissions/" + id + "/grade";
-//        }
-//    }
 
     @GetMapping("/grading")
     public String allPendingSubmissions(@AuthenticationPrincipal UserDetails userDetails, Model model) {

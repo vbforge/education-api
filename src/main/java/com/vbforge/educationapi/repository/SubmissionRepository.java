@@ -39,18 +39,11 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     );
 
     // count graded submissions for a student in a course — for progress tracking
-    @Query("""
-            SELECT COUNT(s) FROM Submission s
-            JOIN s.assignment a
-            JOIN a.module m
-            WHERE m.course.id = :courseId
-              AND s.student.id = :studentId
-              AND s.status = 'GRADED'
-            """)
-    int countGradedByStudentAndCourse(
-            @Param("studentId") Long studentId,
-            @Param("courseId") Long courseId
-    );
+    @Query("SELECT COUNT(s) FROM Submission s " +
+            "WHERE s.student.id = :studentId " +
+            "AND s.assignment.module.course.id = :courseId " +
+            "AND s.status = 'GRADED'")
+    int countGradedByStudentAndCourse(@Param("studentId") Long studentId, @Param("courseId") Long courseId);
 
 
     @Query("SELECT s FROM Submission s WHERE s.assignment.module.course.id = :courseId AND s.status = 'SUBMITTED'")
