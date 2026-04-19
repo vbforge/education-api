@@ -27,6 +27,34 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
 @Controller
 @RequestMapping("/student")
 @RequiredArgsConstructor
@@ -413,13 +441,14 @@ public class StudentWebController {
             List<Map<String, Object>> assignments = new ArrayList<>();
             for (Object[] row : results) {
                 Map<String, Object> assignment = new HashMap<>();
-                assignment.put("id", row[0]);           // assignment id
-                assignment.put("title", row[1]);        // assignment title
-                assignment.put("dueDate", row[2]);      // due date
-                assignment.put("score", row[3]);        // score
-                assignment.put("status", row[4]);       // status
-                assignment.put("courseName", row[5]);   // course name
-                assignment.put("pointsPossible", row[6]); // points possible
+                assignment.put("id", row[0]);              // assignment id
+                assignment.put("title", row[1]);           // assignment title
+                assignment.put("dueDate", row[2]);         // due date
+                assignment.put("score", row[3]);           // score
+                assignment.put("status", row[4]);          // status
+                assignment.put("courseName", row[5]);      // course name
+                assignment.put("pointsPossible", row[6]);  // points possible
+                assignment.put("filePath", row[7]);        // Add file path for download
                 assignments.add(assignment);
             }
 
@@ -523,6 +552,56 @@ public class StudentWebController {
 
         return "student-announcements";
     }
+
+
+    @GetMapping("/download/{submissionId}")
+    public ResponseEntity<Resource> downloadSubmission(@PathVariable Long submissionId,
+                                                       @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+
+            Submission submission = submissionRepository.findById(submissionId)
+                    .orElseThrow(() -> new RuntimeException("Submission not found"));
+
+            // Security: Only the student who submitted can download
+            if (!submission.getStudent().getId().equals(student.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            if (submission.getFilePath() == null || submission.getFilePath().isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Path filePath = storageService.load(submission.getFilePath());
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (!resource.exists() && !resource.isReadable()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            // Extract filename from path
+            String filename = filePath.getFileName().toString();
+            String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8)
+                    .replaceAll("\\+", "%20");
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename*=UTF-8''" + encodedFilename)
+                    .body(resource);
+
+        } catch (Exception e) {
+            System.err.println("Error downloading submission: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
 }
 
 

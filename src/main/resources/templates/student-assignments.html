@@ -103,7 +103,14 @@
                 <div>
                     <span th:if="${assignment.status == 'PENDING'}" class="status-badge status-pending">⏳ Pending</span>
                     <span th:if="${assignment.status == 'SUBMITTED'}" class="status-badge status-submitted">✓ Submitted</span>
-                    <span th:if="${assignment.status == 'GRADED'}" class="status-badge status-graded" th:text="'⭐ ' + ${assignment.score} + '/' + ${assignment.pointsPossible}">Graded</span>
+                    <span th:if="${assignment.status == 'GRADED'}"
+                          class="status-badge status-graded" th:text="'⭐ ' + ${assignment.score} + '/' + ${assignment.pointsPossible}">Graded</span>
+
+                    <!-- Download button for submitted/graded assignments -->
+                    <a th:if="${assignment.status == 'SUBMITTED' or assignment.status == 'GRADED'}"
+                       th:href="'/student/download/' + ${assignment.id}"
+                       class="btn btn-secondary">📎 Download</a>
+
                     <a th:if="${assignment.status == 'PENDING'}"
                        th:href="'/student/assignments/' + ${assignment.id} + '/submit'"
                        class="btn btn-primary" style="margin-left: 12px;">Submit →</a>
