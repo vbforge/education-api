@@ -119,14 +119,25 @@ public class StudentWebController {
 
             for (Object[] row : pendingResults) {
                 Map<String, Object> assignmentMap = new HashMap<>();
-                assignmentMap.put("id", row[0]);      // assignment id
-                assignmentMap.put("title", row[1]);   // assignment title
-                assignmentMap.put("dueDate", row[2]); // due date
-                assignmentMap.put("score", row[3]);   // score (null for pending)
-                assignmentMap.put("status", row[4]);  // status (PENDING)
-                assignmentMap.put("courseName", row[5]); // course name
+                assignmentMap.put("id", row[1]);           // assignment_id (index 1)
+                assignmentMap.put("title", row[2]);        // title (index 2)
+                assignmentMap.put("dueDate", row[3]);      // due_date (index 3)
+                assignmentMap.put("score", row[4]);        // score (index 4)
+
+                // Handle status - it could be String or Number
+                Object statusObj = row[5];
+                String status;
+                if (statusObj instanceof String) {
+                    status = (String) statusObj;
+                } else {
+                    // If it's a number (like 0,1,2), convert to string representation
+                    status = String.valueOf(statusObj);
+                }
+                assignmentMap.put("status", status);
+
+                assignmentMap.put("courseName", row[6]);   // course_name (index 6)
                 upcomingAssignments.add(assignmentMap);
-                System.out.println("  Added pending assignment: " + row[1] + " (Course: " + row[5] + ")");
+                System.out.println("  Added pending assignment: " + row[2] + " (Course: " + row[6] + ", Status: " + status + ")");
             }
 
             // 3. Get ALL submissions for stats (completed assignments, average grade)
@@ -137,11 +148,21 @@ public class StudentWebController {
             int totalAssignments = allSubmissionResults.size();
 
             for (Object[] row : allSubmissionResults) {
-                String status = (String) row[4];
+                // Status is at index 5 in this query
+                Object statusObj = row[5];
+                String status;
+                if (statusObj instanceof String) {
+                    status = (String) statusObj;
+                } else {
+                    status = String.valueOf(statusObj);
+                }
+
                 if ("GRADED".equals(status)) {
                     completedAssignments++;
-                    if (row[3] != null) {
-                        totalScore += ((Number) row[3]).doubleValue();
+                    Object scoreObj = row[4];
+                    if (scoreObj != null) {
+                        double score = ((Number) scoreObj).doubleValue();
+                        totalScore += score;
                         gradedCount++;
                     }
                 }
@@ -435,20 +456,20 @@ public class StudentWebController {
             Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
             Long studentId = student.getId();
 
-            // Get all submissions with assignment details including points_possible
             List<Object[]> results = submissionRepository.findSubmissionsWithDetailsNative(studentId);
 
             List<Map<String, Object>> assignments = new ArrayList<>();
             for (Object[] row : results) {
                 Map<String, Object> assignment = new HashMap<>();
-                assignment.put("id", row[0]);              // assignment id
-                assignment.put("title", row[1]);           // assignment title
-                assignment.put("dueDate", row[2]);         // due date
-                assignment.put("score", row[3]);           // score
-                assignment.put("status", row[4]);          // status
-                assignment.put("courseName", row[5]);      // course name
-                assignment.put("pointsPossible", row[6]);  // points possible
-                assignment.put("filePath", row[7]);        // Add file path for download
+                assignment.put("submissionId", row[0]);  // submission ID (for download)
+                assignment.put("id", row[1]);            // assignment ID (for submit link)
+                assignment.put("title", row[2]);
+                assignment.put("dueDate", row[3]);
+                assignment.put("score", row[4]);
+                assignment.put("status", row[5]);
+                assignment.put("courseName", row[6]);
+                assignment.put("pointsPossible", row[7]);
+                assignment.put("filePath", row[8]);
                 assignments.add(assignment);
             }
 
