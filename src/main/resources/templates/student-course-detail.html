@@ -464,6 +464,7 @@
 
         <!-- Sidebar -->
         <div>
+
             <div class="sidebar-card">
                 <h3>📊 Your Progress</h3>
                 <div>
@@ -481,6 +482,7 @@
                 </div>
             </div>
 
+
             <div class="sidebar-card">
                 <h3>📋 Course Info</h3>
                 <div class="info-row">
@@ -492,6 +494,22 @@
                     <div class="info-value" th:text="${course.schedule != null ? course.schedule : 'Not available'}">Not available</div>
                 </div>
             </div>
+
+            <!-- Drop Course Button (only show for ACTIVE enrollments) -->
+            <div th:if="${enrollmentStatus == 'ACTIVE'}" class="sidebar-card" style="border-color: rgba(255, 69, 58, 0.3); margin-top: 24px;">
+                <h3 style="color: #ff453a;">⚠️ Danger Zone</h3>
+                <p style="font-size: 13px; color: #86868b; margin-bottom: 16px;">
+                    Once you drop this course, you will lose access to all course materials.<br>
+                    You can re-enroll anytime from the Course Catalog.
+                </p>
+                <form th:action="'/student/drop-course/' + ${course.id}" method="post"
+                      onsubmit="return confirm('Are you sure you want to drop this course? This action cannot be undone, but you can re-enroll later.');">
+                    <button type="submit" class="btn btn-danger" style="width: 100%; background: rgba(255, 69, 58, 0.15); color: #ff453a; padding: 10px; border: 1px solid rgba(255, 69, 58, 0.3); border-radius: 12px; cursor: pointer;">
+                        🚫 Drop Course
+                    </button>
+                </form>
+            </div>
+
         </div>
     </div>
 </div>

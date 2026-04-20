@@ -64,6 +64,12 @@ public class InstructorWebController {
             int pendingGrading = 0;
 
             for (Course course : myCourses) {
+
+                List<Enrollment> courseEnrollments = enrollmentRepository.findByCourseId(course.getId())
+                        .stream()
+                        .filter(e -> e.getStatus() != EnrollmentStatus.DROPPED)
+                        .collect(Collectors.toList());
+
                 Map<String, Object> courseMap = new HashMap<>();
                 courseMap.put("id", course.getId());
                 courseMap.put("name", course.getName());
@@ -76,7 +82,7 @@ public class InstructorWebController {
                 courseMap.put("moduleCount", moduleCount);
                 courseMap.put("pendingSubmissions", pending);
 
-                totalStudents += enrollmentCount;
+                totalStudents += courseEnrollments.size();
                 pendingGrading += pending;
                 courseList.add(courseMap);
             }
@@ -161,6 +167,7 @@ public class InstructorWebController {
 
         return "instructor-dashboard";
     }
+
 
     // ============================================
     // COURSE MANAGEMENT
@@ -703,13 +710,87 @@ public class InstructorWebController {
         return "instructor-grading-all";
     }
 
+//    @GetMapping("/courses/{courseId}/progress")
+//    public String courseProgress(@PathVariable Long courseId, Model model) {
+//        try {
+//            System.out.println("=== COURSE PROGRESS ===");
+//            System.out.println("Course ID: " + courseId);
+//
+//            // Get course using regular JPA
+//            Course course = courseRepository.findById(courseId).orElse(null);
+//            if (course == null) {
+//                System.out.println("Course not found!");
+//                model.addAttribute("error", "Course not found");
+//                return "redirect:/instructor/courses";
+//            }
+//
+//            System.out.println("Course: " + course.getName());
+//
+//            // Get enrollments with native query to get student data
+//            List<Object[]> enrollmentResults = enrollmentRepository.findEnrollmentsWithStudentByCourseIdNative(courseId);
+//            System.out.println("Enrollments found: " + enrollmentResults.size());
+//
+//            List<Map<String, Object>> students = new ArrayList<>();
+//            double totalProgress = 0;
+//            double totalGrade = 0;
+//            int gradedCount = 0;
+//            long completedCount = 0;
+//
+//            for (Object[] row : enrollmentResults) {
+//                Map<String, Object> studentMap = new HashMap<>();
+//                studentMap.put("id", row[0]);  // student_id
+//                studentMap.put("name", row[1]); // student_name
+//                studentMap.put("progressPct", row[2]); // progress_pct
+//                studentMap.put("grade", row[3]); // grade
+//                studentMap.put("status", row[4]); // status
+//                studentMap.put("enrolledAt", row[5]); // enrolled_at
+//                students.add(studentMap);
+//
+//                double progress = ((Number) row[2]).doubleValue();
+//                totalProgress += progress;
+//
+//                if (row[3] != null) {
+//                    double grade = ((Number) row[3]).doubleValue();
+//                    totalGrade += grade;
+//                    gradedCount++;
+//                }
+//
+//                String status = (String) row[4];
+//                if ("COMPLETED".equals(status)) {
+//                    completedCount++;
+//                }
+//
+//                System.out.println("  Student: " + row[1] + ", Progress: " + progress + "%, Grade: " + row[3]);
+//            }
+//
+//            double avgProgress = enrollmentResults.size() > 0 ? totalProgress / enrollmentResults.size() : 0;
+//            double avgGrade = gradedCount > 0 ? totalGrade / gradedCount : 0;
+//
+//            model.addAttribute("course", course);
+//            model.addAttribute("students", students);
+//            model.addAttribute("totalStudents", enrollmentResults.size());
+//            model.addAttribute("avgProgress", Math.round(avgProgress));
+//            model.addAttribute("avgGrade", Math.round(avgGrade));
+//            model.addAttribute("completedCount", completedCount);
+//            model.addAttribute("title", "Student Progress - " + course.getName());
+//
+//        } catch (Exception e) {
+//            System.err.println("Error in courseProgress: " + e.getMessage());
+//            e.printStackTrace();
+//            model.addAttribute("error", e.getMessage());
+//            model.addAttribute("students", new ArrayList<>());
+//        }
+//
+//        return "instructor-course-progress";
+//    }
+
     @GetMapping("/courses/{courseId}/progress")
     public String courseProgress(@PathVariable Long courseId, Model model) {
         try {
-            System.out.println("=== COURSE PROGRESS ===");
+            System.out.println("=== COURSE PROGRESS DEBUG ===");
             System.out.println("Course ID: " + courseId);
 
-            // Get course using regular JPA
+            // Get course - this might be null if course doesn't exist
             Course course = courseRepository.findById(courseId).orElse(null);
             if (course == null) {
                 System.out.println("Course not found!");
@@ -719,9 +800,13 @@ public class InstructorWebController {
 
             System.out.println("Course: " + course.getName());
 
-            // Get enrollments with native query to get student data
-            List<Object[]> enrollmentResults = enrollmentRepository.findEnrollmentsWithStudentByCourseIdNative(courseId);
-            System.out.println("Enrollments found: " + enrollmentResults.size());
+            // Get only ACTIVE and COMPLETED enrollments (exclude DROPPED)
+            List<Enrollment> allEnrollments = enrollmentRepository.findByCourseId(courseId);
+            List<Enrollment> enrollments = allEnrollments.stream()
+                    .filter(e -> e.getStatus() != EnrollmentStatus.DROPPED)
+                    .collect(Collectors.toList());
+
+            System.out.println("Total enrollments (excluding dropped): " + enrollments.size());
 
             List<Map<String, Object>> students = new ArrayList<>();
             double totalProgress = 0;
@@ -729,39 +814,46 @@ public class InstructorWebController {
             int gradedCount = 0;
             long completedCount = 0;
 
-            for (Object[] row : enrollmentResults) {
+            for (Enrollment enrollment : enrollments) {
                 Map<String, Object> studentMap = new HashMap<>();
-                studentMap.put("id", row[0]);  // student_id
-                studentMap.put("name", row[1]); // student_name
-                studentMap.put("progressPct", row[2]); // progress_pct
-                studentMap.put("grade", row[3]); // grade
-                studentMap.put("status", row[4]); // status
-                studentMap.put("enrolledAt", row[5]); // enrolled_at
+                studentMap.put("id", enrollment.getStudent().getId());
+                studentMap.put("name", enrollment.getStudent().getName());
+                studentMap.put("progressPct", enrollment.getProgressPct());
+                studentMap.put("grade", enrollment.getGrade());
+                studentMap.put("status", enrollment.getStatus().name());
+                studentMap.put("enrolledAt", enrollment.getCreatedAt());
                 students.add(studentMap);
 
-                double progress = ((Number) row[2]).doubleValue();
-                totalProgress += progress;
-
-                if (row[3] != null) {
-                    double grade = ((Number) row[3]).doubleValue();
-                    totalGrade += grade;
+                totalProgress += enrollment.getProgressPct().doubleValue();
+                if (enrollment.getGrade() != null) {
+                    totalGrade += enrollment.getGrade().doubleValue();
                     gradedCount++;
                 }
-
-                String status = (String) row[4];
-                if ("COMPLETED".equals(status)) {
+                if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
                     completedCount++;
                 }
-
-                System.out.println("  Student: " + row[1] + ", Progress: " + progress + "%, Grade: " + row[3]);
             }
 
-            double avgProgress = enrollmentResults.size() > 0 ? totalProgress / enrollmentResults.size() : 0;
+            double avgProgress = enrollments.size() > 0 ? totalProgress / enrollments.size() : 0;
             double avgGrade = gradedCount > 0 ? totalGrade / gradedCount : 0;
 
-            model.addAttribute("course", course);
+            // Create a response DTO for the course
+            CourseResponseDto courseDto = CourseResponseDto.builder()
+                    .id(course.getId())
+                    .name(course.getName())
+                    .description(course.getDescription())
+                    .instructor(course.getInstructor())
+                    .syllabus(course.getSyllabus())
+                    .schedule(course.getSchedule())
+                    .moduleCount(courseRepository.countModulesByCourseId(courseId))
+                    .enrollmentCount(enrollments.size())
+                    .createdAt(course.getCreatedAt())
+                    .updatedAt(course.getUpdatedAt())
+                    .build();
+
+            model.addAttribute("course", courseDto);
             model.addAttribute("students", students);
-            model.addAttribute("totalStudents", enrollmentResults.size());
+            model.addAttribute("totalStudents", enrollments.size());
             model.addAttribute("avgProgress", Math.round(avgProgress));
             model.addAttribute("avgGrade", Math.round(avgGrade));
             model.addAttribute("completedCount", completedCount);
@@ -830,16 +922,92 @@ public class InstructorWebController {
     //===============================
     //        Analytics
     //===============================
+//    @GetMapping("/courses/{courseId}/analytics")
+//    public String courseAnalytics(@PathVariable Long courseId, Model model) {
+//        try {
+//            CourseResponseDto course = courseService.findById(courseId);
+//
+//            // Get enrollments
+//            List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
+//            int totalStudents = enrollments.size();
+//
+//            // Calculate averages
+//            double avgProgress = enrollments.stream()
+//                    .mapToDouble(e -> e.getProgressPct().doubleValue())
+//                    .average().orElse(0);
+//            double avgGrade = enrollments.stream()
+//                    .filter(e -> e.getGrade() != null)
+//                    .mapToDouble(e -> e.getGrade().doubleValue())
+//                    .average().orElse(0);
+//            long completedCount = enrollments.stream()
+//                    .filter(e -> e.getStatus() == EnrollmentStatus.COMPLETED)
+//                    .count();
+//            double completionRate = totalStudents > 0 ? (completedCount * 100.0 / totalStudents) : 0;
+//
+//            // Grade distribution
+//            List<Map<String, Object>> gradeDistribution = Arrays.asList(
+//                    createGradeRange("90-100% (Excellent)", 90, 100, enrollments),
+//                    createGradeRange("75-89% (Good)", 75, 89, enrollments),
+//                    createGradeRange("60-74% (Average)", 60, 74, enrollments),
+//                    createGradeRange("Below 60% (Needs Improvement)", 0, 59, enrollments)
+//            );
+//
+//            // Assignment performance
+//            List<ModuleResponseDto> modules = moduleService.findByCourse(courseId);
+//            List<Map<String, Object>> assignmentStats = new ArrayList<>();
+//
+//            for (ModuleResponseDto module : modules) {
+//                List<AssignmentResponseDto> assignments = assignmentService.findByModule(module.getId());
+//                for (AssignmentResponseDto assignment : assignments) {
+//                    List<Submission> submissions = submissionRepository.findByAssignmentId(assignment.getId());
+//                    double avgScore = submissions.stream()
+//                            .filter(s -> s.getScore() != null)
+//                            .mapToDouble(s -> s.getScore().doubleValue())
+//                            .average().orElse(0);
+//                    double maxScore = assignment.getPointsPossible();
+//                    double avgScorePercent = maxScore > 0 ? (avgScore / maxScore * 100) : 0;
+//
+//                    Map<String, Object> stat = new HashMap<>();
+//                    stat.put("title", assignment.getTitle());
+//                    stat.put("avgScore", Math.round(avgScorePercent));
+//                    stat.put("submissionCount", submissions.size());
+//                    stat.put("totalStudents", totalStudents);
+//                    stat.put("submissionRate", totalStudents > 0 ? (submissions.size() * 100.0 / totalStudents) : 0);
+//                    stat.put("pointsPossible", assignment.getPointsPossible());
+//                    assignmentStats.add(stat);
+//                }
+//            }
+//
+//            model.addAttribute("course", course);
+//            model.addAttribute("totalStudents", totalStudents);
+//            model.addAttribute("avgProgress", Math.round(avgProgress));
+//            model.addAttribute("avgGrade", Math.round(avgGrade));
+//            model.addAttribute("completionRate", Math.round(completionRate));
+//            model.addAttribute("gradeDistribution", gradeDistribution);
+//            model.addAttribute("assignments", assignmentStats);
+//            model.addAttribute("title", "Course Analytics - " + course.getName());
+//
+//        } catch (Exception e) {
+//            System.err.println("Error in courseAnalytics: " + e.getMessage());
+//            e.printStackTrace();
+//            model.addAttribute("error", e.getMessage());
+//        }
+//
+//        return "instructor-course-analytics";
+//    }
+
     @GetMapping("/courses/{courseId}/analytics")
     public String courseAnalytics(@PathVariable Long courseId, Model model) {
         try {
             CourseResponseDto course = courseService.findById(courseId);
 
-            // Get enrollments
-            List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
-            int totalStudents = enrollments.size();
+            // Only get ACTIVE and COMPLETED enrollments (exclude DROPPED)
+            List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId)
+                    .stream()
+                    .filter(e -> e.getStatus() != EnrollmentStatus.DROPPED)
+                    .collect(Collectors.toList());
 
-            // Calculate averages
+            int totalStudents = enrollments.size();
             double avgProgress = enrollments.stream()
                     .mapToDouble(e -> e.getProgressPct().doubleValue())
                     .average().orElse(0);
@@ -852,7 +1020,7 @@ public class InstructorWebController {
                     .count();
             double completionRate = totalStudents > 0 ? (completedCount * 100.0 / totalStudents) : 0;
 
-            // Grade distribution
+            // Grade distribution (only from enrollments with grades)
             List<Map<String, Object>> gradeDistribution = Arrays.asList(
                     createGradeRange("90-100% (Excellent)", 90, 100, enrollments),
                     createGradeRange("75-89% (Good)", 75, 89, enrollments),
@@ -860,7 +1028,7 @@ public class InstructorWebController {
                     createGradeRange("Below 60% (Needs Improvement)", 0, 59, enrollments)
             );
 
-            // Assignment performance
+            // Assignment performance (only from active/completed students)
             List<ModuleResponseDto> modules = moduleService.findByCourse(courseId);
             List<Map<String, Object>> assignmentStats = new ArrayList<>();
 
@@ -868,7 +1036,17 @@ public class InstructorWebController {
                 List<AssignmentResponseDto> assignments = assignmentService.findByModule(module.getId());
                 for (AssignmentResponseDto assignment : assignments) {
                     List<Submission> submissions = submissionRepository.findByAssignmentId(assignment.getId());
-                    double avgScore = submissions.stream()
+
+                    // Filter submissions only from active/completed students
+                    List<Submission> activeSubmissions = submissions.stream()
+                            .filter(s -> {
+                                var enrollment = enrollmentRepository.findByStudentIdAndCourseId(
+                                        s.getStudent().getId(), courseId);
+                                return enrollment.map(e -> e.getStatus() != EnrollmentStatus.DROPPED).orElse(false);
+                            })
+                            .collect(Collectors.toList());
+
+                    double avgScore = activeSubmissions.stream()
                             .filter(s -> s.getScore() != null)
                             .mapToDouble(s -> s.getScore().doubleValue())
                             .average().orElse(0);
@@ -878,9 +1056,9 @@ public class InstructorWebController {
                     Map<String, Object> stat = new HashMap<>();
                     stat.put("title", assignment.getTitle());
                     stat.put("avgScore", Math.round(avgScorePercent));
-                    stat.put("submissionCount", submissions.size());
+                    stat.put("submissionCount", activeSubmissions.size());
                     stat.put("totalStudents", totalStudents);
-                    stat.put("submissionRate", totalStudents > 0 ? (submissions.size() * 100.0 / totalStudents) : 0);
+                    stat.put("submissionRate", totalStudents > 0 ? (activeSubmissions.size() * 100.0 / totalStudents) : 0);
                     stat.put("pointsPossible", assignment.getPointsPossible());
                     assignmentStats.add(stat);
                 }
@@ -896,8 +1074,6 @@ public class InstructorWebController {
             model.addAttribute("title", "Course Analytics - " + course.getName());
 
         } catch (Exception e) {
-            System.err.println("Error in courseAnalytics: " + e.getMessage());
-            e.printStackTrace();
             model.addAttribute("error", e.getMessage());
         }
 

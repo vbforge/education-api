@@ -204,7 +204,7 @@ public class StudentWebController {
     @GetMapping("/courses")
     public String courses(@RequestParam(required = false) String keyword,
                           @RequestParam(defaultValue = "0") int page,
-                          @RequestParam(defaultValue = "20") int size,  // Increased to show all
+                          @RequestParam(defaultValue = "20") int size,
                           @AuthenticationPrincipal UserDetails userDetails,
                           Model model) {
         if (userDetails == null) return "redirect:/login";
@@ -212,15 +212,13 @@ public class StudentWebController {
         try {
             Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
 
-            // Get enrolled course IDs
-            Set<Long> enrolledCourseIds = enrollmentRepository.findByStudentId(student.getId())
-                    .stream().map(e -> e.getCourse().getId()).collect(Collectors.toSet());
+            // Get enrollment status for each course
+            Map<Long, EnrollmentStatus> enrollmentStatusMap = new HashMap<>();
+            List<Enrollment> enrollments = enrollmentRepository.findByStudentId(student.getId());
+            for (Enrollment e : enrollments) {
+                enrollmentStatusMap.put(e.getCourse().getId(), e.getStatus());
+            }
 
-            System.out.println("=== COURSE CATALOG DEBUG ===");
-            System.out.println("Student ID: " + student.getId());
-            System.out.println("Enrolled course IDs: " + enrolledCourseIds);
-
-            // Get ALL courses (increase size to show all)
             Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
             PageResponseDto<CourseResponseDto> coursePage;
 
@@ -231,29 +229,27 @@ public class StudentWebController {
                 coursePage = courseService.findAll(pageable);
             }
 
-            System.out.println("Total courses found: " + coursePage.getContent().size());
-
             List<Map<String, Object>> enhancedCourses = new ArrayList<>();
             for (CourseResponseDto course : coursePage.getContent()) {
                 Map<String, Object> enhanced = new HashMap<>();
                 enhanced.put("id", course.getId());
                 enhanced.put("name", course.getName());
-                enhanced.put("description", course.getDescription() != null ? course.getDescription() : "");
-                enhanced.put("instructor", course.getInstructor() != null ? course.getInstructor() : "Staff");
+                enhanced.put("description", course.getDescription());
+                enhanced.put("instructor", course.getInstructor());
                 enhanced.put("moduleCount", course.getModuleCount());
                 enhanced.put("enrollmentCount", course.getEnrollmentCount());
-                enhanced.put("enrolled", enrolledCourseIds.contains(course.getId()));
 
-                // If enrolled, get progress
-                if (enrolledCourseIds.contains(course.getId())) {
+                EnrollmentStatus status = enrollmentStatusMap.get(course.getId());
+                enhanced.put("enrollmentStatus", status != null ? status.name() : null);
+                enhanced.put("isEnrolled", status == EnrollmentStatus.ACTIVE);
+                enhanced.put("isDropped", status == EnrollmentStatus.DROPPED);
+
+                if (status == EnrollmentStatus.ACTIVE) {
                     var enrollment = enrollmentRepository.findByStudentIdAndCourseId(student.getId(), course.getId());
                     enhanced.put("progressPct", enrollment.map(e -> e.getProgressPct()).orElse(BigDecimal.ZERO));
-                } else {
-                    enhanced.put("progressPct", 0);
                 }
 
                 enhancedCourses.add(enhanced);
-                System.out.println("  Course: " + course.getName() + " - Enrolled: " + enhanced.get("enrolled"));
             }
 
             model.addAttribute("courses", enhancedCourses);
@@ -261,14 +257,82 @@ public class StudentWebController {
             model.addAttribute("title", "Course Catalog");
 
         } catch (Exception e) {
-            System.err.println("ERROR in course catalog: " + e.getMessage());
-            e.printStackTrace();
             model.addAttribute("error", e.getMessage());
             model.addAttribute("courses", new ArrayList<>());
         }
 
         return "student-courses";
     }
+
+
+//    @GetMapping("/courses")
+//    public String courses(@RequestParam(required = false) String keyword,
+//                          @RequestParam(defaultValue = "0") int page,
+//                          @RequestParam(defaultValue = "20") int size,  // Increased to show all
+//                          @AuthenticationPrincipal UserDetails userDetails,
+//                          Model model) {
+//        if (userDetails == null) return "redirect:/login";
+//
+//        try {
+//            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+//
+//            // Get enrolled course IDs
+//            Set<Long> enrolledCourseIds = enrollmentRepository.findByStudentId(student.getId())
+//                    .stream().map(e -> e.getCourse().getId()).collect(Collectors.toSet());
+//
+//            System.out.println("=== COURSE CATALOG DEBUG ===");
+//            System.out.println("Student ID: " + student.getId());
+//            System.out.println("Enrolled course IDs: " + enrolledCourseIds);
+//
+//            // Get ALL courses (increase size to show all)
+//            Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+//            PageResponseDto<CourseResponseDto> coursePage;
+//
+//            if (keyword != null && !keyword.isBlank()) {
+//                coursePage = courseService.search(keyword, pageable);
+//                model.addAttribute("keyword", keyword);
+//            } else {
+//                coursePage = courseService.findAll(pageable);
+//            }
+//
+//            System.out.println("Total courses found: " + coursePage.getContent().size());
+//
+//            List<Map<String, Object>> enhancedCourses = new ArrayList<>();
+//            for (CourseResponseDto course : coursePage.getContent()) {
+//                Map<String, Object> enhanced = new HashMap<>();
+//                enhanced.put("id", course.getId());
+//                enhanced.put("name", course.getName());
+//                enhanced.put("description", course.getDescription() != null ? course.getDescription() : "");
+//                enhanced.put("instructor", course.getInstructor() != null ? course.getInstructor() : "Staff");
+//                enhanced.put("moduleCount", course.getModuleCount());
+//                enhanced.put("enrollmentCount", course.getEnrollmentCount());
+//                enhanced.put("enrolled", enrolledCourseIds.contains(course.getId()));
+//
+//                // If enrolled, get progress
+//                if (enrolledCourseIds.contains(course.getId())) {
+//                    var enrollment = enrollmentRepository.findByStudentIdAndCourseId(student.getId(), course.getId());
+//                    enhanced.put("progressPct", enrollment.map(e -> e.getProgressPct()).orElse(BigDecimal.ZERO));
+//                } else {
+//                    enhanced.put("progressPct", 0);
+//                }
+//
+//                enhancedCourses.add(enhanced);
+//                System.out.println("  Course: " + course.getName() + " - Enrolled: " + enhanced.get("enrolled"));
+//            }
+//
+//            model.addAttribute("courses", enhancedCourses);
+//            model.addAttribute("page", coursePage);
+//            model.addAttribute("title", "Course Catalog");
+//
+//        } catch (Exception e) {
+//            System.err.println("ERROR in course catalog: " + e.getMessage());
+//            e.printStackTrace();
+//            model.addAttribute("error", e.getMessage());
+//            model.addAttribute("courses", new ArrayList<>());
+//        }
+//
+//        return "student-courses";
+//    }
 
     @GetMapping("/courses/{id}")
     public String courseDetail(@PathVariable Long id,
@@ -328,6 +392,10 @@ public class StudentWebController {
             var enrollment = enrollmentRepository.findByStudentIdAndCourseId(studentId, id).orElse(null);
             BigDecimal progressPct = enrollment != null ? enrollment.getProgressPct() : BigDecimal.ZERO;
             BigDecimal grade = enrollment != null ? enrollment.getGrade() : null;
+
+            // After getting enrollment, add status to model
+            EnrollmentStatus enrollmentStatus = enrollment != null ? enrollment.getStatus() : null;
+            model.addAttribute("enrollmentStatus", enrollmentStatus != null ? enrollmentStatus.name() : null);
 
             model.addAttribute("course", course);
             model.addAttribute("modules", enhancedModules);
@@ -621,6 +689,28 @@ public class StudentWebController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @PostMapping("/drop-course/{courseId}")
+    public String dropCourse(@PathVariable Long courseId,
+                             @AuthenticationPrincipal UserDetails userDetails,
+                             RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+
+            enrollmentService.drop(student.getId(), courseId);
+
+            redirectAttributes.addFlashAttribute("message", "You have successfully dropped the course. You can re-enroll anytime from the Course Catalog.");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to drop course: " + e.getMessage());
+        }
+
+        return "redirect:/student/dashboard";
     }
 
 }

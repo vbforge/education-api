@@ -50,4 +50,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             nativeQuery = true)
     List<Object[]> findEnrollmentsWithCourseDataNative(@Param("studentId") Long studentId);
 
+
+    @Query("SELECT e.status FROM Enrollment e WHERE e.student.id = :studentId AND e.course.id = :courseId")
+    Optional<EnrollmentStatus> findStatusByStudentIdAndCourseId(@Param("studentId") Long studentId, @Param("courseId") Long courseId);
+
 }

@@ -418,19 +418,46 @@
                     <span>👥 <span th:text="${course.enrollmentCount}">0</span> students</span>
                 </div>
 
-                <div th:if="${course.enrolled}">
+<!--                <div th:if="${course.enrolled}">-->
+<!--                    <div class="course-footer">-->
+<!--                        <span class="status-badge status-enrolled">✓ Enrolled</span>-->
+<!--                        <span th:text="'Progress: ' + ${course.progressPct} + '%'" style="font-size: 12px; color: #34c759;"></span>-->
+<!--                        <a th:href="'/student/courses/' + ${course.id}" class="btn btn-secondary">Continue →</a>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div th:unless="${course.enrolled}">-->
+<!--                    <form th:action="@{/student/enroll}" method="post" class="enroll-form">-->
+<!--                        <input type="hidden" name="courseId" th:value="${course.id}">-->
+<!--                        <button type="submit" class="btn btn-primary" style="width: 100%;">Enroll Now →</button>-->
+<!--                    </form>-->
+<!--                </div>-->
+
+
+                <div th:if="${course.enrollmentStatus == 'ACTIVE'}">
                     <div class="course-footer">
                         <span class="status-badge status-enrolled">✓ Enrolled</span>
                         <span th:text="'Progress: ' + ${course.progressPct} + '%'" style="font-size: 12px; color: #34c759;"></span>
                         <a th:href="'/student/courses/' + ${course.id}" class="btn btn-secondary">Continue →</a>
                     </div>
                 </div>
-                <div th:unless="${course.enrolled}">
-                    <form th:action="@{/student/enroll}" method="post" class="enroll-form">
-                        <input type="hidden" name="courseId" th:value="${course.id}">
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Enroll Now →</button>
-                    </form>
+                <div th:if="${course.enrollmentStatus == 'DROPPED'}">
+                    <div class="course-footer">
+                        <span class="status-badge status-dropped" style="background: rgba(255, 69, 58, 0.15); color: #ff453a;">✗ Dropped</span>
+                        <form th:action="@{/student/enroll}" method="post" style="display: inline;">
+                            <input type="hidden" name="courseId" th:value="${course.id}">
+                            <button type="submit" class="btn btn-primary">Enroll Again →</button>
+                        </form>
+                    </div>
                 </div>
+                <div th:unless="${course.enrollmentStatus == 'ACTIVE' or course.enrollmentStatus == 'DROPPED'}">
+                    <div class="course-footer">
+                        <form th:action="@{/student/enroll}" method="post" style="width: 100%;">
+                            <input type="hidden" name="courseId" th:value="${course.id}">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Enroll Now →</button>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

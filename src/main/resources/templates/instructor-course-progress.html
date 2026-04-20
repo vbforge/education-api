@@ -113,7 +113,8 @@
     <a href="/instructor/courses" class="back-link">← Back to Courses</a>
 
     <div class="card">
-        <h1 th:text="'Student Progress - ' + ${course.name}">Student Progress</h1>
+        <h1 th:if="${course != null}" th:text="'Student Progress - ' + ${course.name}">Student Progress</h1>
+        <h1 th:unless="${course != null}">Student Progress</h1>
 
         <div class="stats-summary" th:if="${course != null}">
             <span class="stat-badge">👥 Total Students: <span th:text="${totalStudents}">0</span></span>

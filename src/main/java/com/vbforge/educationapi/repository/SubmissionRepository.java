@@ -100,12 +100,32 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Object[]> findGradedSubmissionsWithDetailsNative(@Param("studentId") Long studentId);
 
 
+//    @Query(value = "SELECT NULL as submission_id, a.id as assignment_id, a.title, a.due_date, NULL as score, 'PENDING' as status, c.name as course_name, a.points_possible, NULL as file_path " +
+//            "FROM assignments a " +
+//            "JOIN modules m ON m.id = a.module_id " +
+//            "JOIN courses c ON c.id = m.course_id " +
+//            "JOIN enrollments e ON e.course_id = c.id " +
+//            "WHERE e.student_id = :studentId " +
+//            "AND a.id NOT IN (SELECT s.assignment_id FROM submissions s WHERE s.student_id = :studentId) " +
+//            "AND a.due_date > NOW() " +
+//            "UNION ALL " +
+//            "SELECT s.id as submission_id, a.id as assignment_id, a.title, a.due_date, s.score, s.status, c.name, a.points_possible, s.file_path " +
+//            "FROM submissions s " +
+//            "JOIN assignments a ON a.id = s.assignment_id " +
+//            "JOIN modules m ON m.id = a.module_id " +
+//            "JOIN courses c ON c.id = m.course_id " +
+//            "WHERE s.student_id = :studentId AND s.status = 'PENDING' " +
+//            "ORDER BY due_date ASC",
+//            nativeQuery = true)
+//    List<Object[]> findPendingSubmissionsForStudentNative(@Param("studentId") Long studentId);
+
     @Query(value = "SELECT NULL as submission_id, a.id as assignment_id, a.title, a.due_date, NULL as score, 'PENDING' as status, c.name as course_name, a.points_possible, NULL as file_path " +
             "FROM assignments a " +
             "JOIN modules m ON m.id = a.module_id " +
             "JOIN courses c ON c.id = m.course_id " +
             "JOIN enrollments e ON e.course_id = c.id " +
             "WHERE e.student_id = :studentId " +
+            "AND e.status = 'ACTIVE' " +  // ← only ACTIVE enrollments
             "AND a.id NOT IN (SELECT s.assignment_id FROM submissions s WHERE s.student_id = :studentId) " +
             "AND a.due_date > NOW() " +
             "UNION ALL " +
