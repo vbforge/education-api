@@ -34,21 +34,67 @@
             z-index: 1000;
         }
 
-        .logo:hover {
-            text-shadow: 0 0 10px #05a3b2;
-            transform: scale(1.05);
-            transition: 0.1s ease;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-weight: 600;
         }
 
-        .logo {
-            font-size: 24px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-decoration: none;
-            letter-spacing: -0.5px;
+        .logo-text {
+            font-size: 20px;
+            color: #b9b7b7;
+        }
+
+        .logo-icon {
+            stroke: #00d4ff;
+            fill: none;
+            stroke-width: 2;
+            transition: transform 0.3s ease;
+        }
+
+        /* Hover animation */
+        .logo:hover .logo-icon {
+            transform: rotate(-8deg) scale(1.1);
+        }
+
+        /* Drawing effect */
+        .cap-top {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: draw 1s ease forwards;
+        }
+
+        .cap-base {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: draw 1.2s ease forwards;
+        }
+
+        .tassel {
+            stroke-dasharray: 50;
+            stroke-dashoffset: 50;
+            animation: draw 1.4s ease forwards;
+        }
+
+        .tassel-ball {
+            fill: #00d4ff;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards 1.4s;
+        }
+
+        /* Animations */
+        @keyframes draw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
         }
 
         .nav-links {
@@ -376,10 +422,20 @@
 <body>
 <nav class="navbar">
     <a href="/" class="logo">
-        <span>Education </span>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M4 6L12 2L20 6V18L12 22L4 18V6Z" stroke="#00d4ff" stroke-width="2"/>
-            <text x="6" y="15" fill="#00d4ff" font-size="8">API</text>
+        <span class="logo-text">Education</span>
+
+        <svg class="logo-icon" viewBox="0 0 64 64" width="36" height="36">
+            <!-- Graduation Cap -->
+            <path d="M4 24L32 12L60 24L32 36L4 24Z"
+                  class="cap-top"/>
+
+            <!-- Cap base -->
+            <path d="M16 30V40C16 44 24 48 32 48C40 48 48 44 48 40V30"
+                  class="cap-base"/>
+
+            <!-- Tassel -->
+            <line x1="60" y1="24" x2="60" y2="40" class="tassel"/>
+            <circle cx="60" cy="42" r="2" class="tassel-ball"/>
         </svg>
     </a>
     <div class="nav-links">
@@ -388,6 +444,7 @@
         <a href="/student/assignments">Assignments</a>
         <a href="/student/grades">Grades</a>
         <a href="/student/announcements">Announcements</a>
+        <a href="/student/profile">Profile</a>
         <div class="user-menu">
             <span class="user-name" sec:authentication="name">User</span>
             <form th:action="@{/logout}" method="post" style="display: inline;">
@@ -402,7 +459,8 @@
 
 <div class="container">
     <div class="welcome">
-        <h1>Welcome back, <span sec:authentication="name">Student</span></h1>
+<!--        <h1>Welcome back, <span sec:authentication="name">Student</span></h1>-->
+        <h1>Welcome back, <span th:text="${studentName}">Student</span></h1>
         <p>Continue your learning journey — you're making great progress!</p>
     </div>
 

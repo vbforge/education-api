@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -72,6 +73,9 @@ public class StudentWebController {
     private final EnrollmentRepository enrollmentRepository;
     private final SubmissionRepository submissionRepository;
     private final AnnouncementRepository announcementRepository;
+    private final StudentRepository studentRepository;
+
+    private final PasswordEncoder passwordEncoder;
 
 
     @GetMapping("/dashboard")
@@ -711,6 +715,78 @@ public class StudentWebController {
         }
 
         return "redirect:/student/dashboard";
+    }
+
+    @GetMapping("/profile")
+    public String profile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        if (userDetails == null) return "redirect:/login";
+
+        try {
+            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+            model.addAttribute("student", student);
+            model.addAttribute("title", "My Profile");
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+
+        return "student-profile";
+    }
+
+    @PostMapping("/profile/update-name")
+    public String updateName(@RequestParam String name,
+                             @AuthenticationPrincipal UserDetails userDetails,
+                             RedirectAttributes redirectAttributes) {
+        if (userDetails == null) return "redirect:/login";
+
+        try {
+            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+            student.setName(name);
+            studentRepository.save(student);
+
+            redirectAttributes.addFlashAttribute("message", "Name updated successfully!");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to update name: " + e.getMessage());
+        }
+
+        return "redirect:/student/profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    public String changePassword(@RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String confirmPassword,
+                                 @AuthenticationPrincipal UserDetails userDetails,
+                                 RedirectAttributes redirectAttributes) {
+        if (userDetails == null) return "redirect:/login";
+
+        try {
+            // Check if new passwords match
+            if (!newPassword.equals(confirmPassword)) {
+                redirectAttributes.addFlashAttribute("error", "New passwords do not match!");
+                return "redirect:/student/profile";
+            }
+
+            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+
+            // Verify current password
+            if (!passwordEncoder.matches(currentPassword, student.getPasswordHash())) {
+                redirectAttributes.addFlashAttribute("error", "Current password is incorrect!");
+                return "redirect:/student/profile";
+            }
+
+            // Update password
+            student.setPasswordHash(passwordEncoder.encode(newPassword));
+            studentRepository.save(student);
+
+            redirectAttributes.addFlashAttribute("message", "Password changed successfully!");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to change password: " + e.getMessage());
+        }
+
+        return "redirect:/student/profile";
     }
 
 }
