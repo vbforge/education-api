@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Submission History - EduFlow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, sans-serif;
+            background: #000000;
+            color: #f5f5f7;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3a3a3a, #1a1a1a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #ff453a;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        .back-link {
+            color: #0a84ff;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: rgba(28, 28, 32, 0.8);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .card-header h1 {
+            font-size: 28px;
+        }
+        .submission-item {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: background 0.2s;
+        }
+        .submission-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .submission-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .submission-meta {
+            font-size: 13px;
+            color: #86868b;
+            margin-bottom: 8px;
+        }
+        .submission-details {
+            display: flex;
+            gap: 24px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .score-badge {
+            background: rgba(52, 199, 89, 0.15);
+            color: #34c759;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .pending-badge {
+            background: rgba(255, 159, 10, 0.15);
+            color: #ff9f0a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .submitted-badge {
+            background: rgba(10, 132, 255, 0.15);
+            color: #0a84ff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .feedback-text {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #a1a1a6;
+        }
+        .btn {
+            padding: 6px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #0a84ff;
+            color: white;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #86868b;
+        }
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px 16px; }
+            .submission-details { flex-direction: column; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/" class="logo">EduFlow</a>
+    <div class="nav-links">
+        <a href="/student/dashboard">Dashboard</a>
+        <a href="/student/courses">Courses</a>
+        <a href="/student/grades">Grades</a>
+        <a href="/student/history">History</a>
+        <a href="/student/profile">Profile</a>
+        <div class="user-menu">
+            <span sec:authentication="name" style="color: #86868b;"></span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <button type="submit" class="logout-btn">Sign Out</button>
+            </form>
+            <div class="avatar">
+                <span sec:authentication="principal.username" th:text="${#strings.substring(#strings.toUpperCase(#authentication.name), 0, 1)}">U</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="/student/dashboard" class="back-link">← Back to Dashboard</a>
+
+    <div class="card">
+        <div class="card-header">
+            <h1>📝 Submission History</h1>
+        </div>
+
+        <div th:if="${not #lists.isEmpty(submissions)}">
+            <div th:each="sub : ${submissions}" class="submission-item">
+                <div class="submission-title" th:text="${sub.assignmentTitle}">Assignment Title</div>
+                <div class="submission-meta">
+                    <span th:text="'📘 ' + ${sub.courseName}"></span>
+<!--                    <span th:text="' • Submitted: ' + ${#temporals.format(sub.submittedAt, 'MMM dd, yyyy • hh:mm a')}"></span>-->
+                    <span th:text="' • Submitted: ' + ${#temporals.format(sub.submittedAt, 'MMM dd, yyyy - hh:mm a')}"></span>
+                </div>
+
+
+
+
+
+                <div class="submission-details">
+                    <span th:if="${sub.status == 'GRADED'}" class="score-badge" th:text="'⭐ Score: ' + ${sub.score} + '/' + ${sub.pointsPossible}">Graded</span>
+                    <span th:if="${sub.status == 'SUBMITTED'}" class="submitted-badge">✓ Submitted (Pending Review)</span>
+                    <span th:if="${sub.status == 'PENDING'}" class="pending-badge">⏳ Pending</span>
+<!--                    <span th:text="'📅 Due: ' + ${#temporals.format(sub.dueDate, 'MMM dd, yyyy')}" style="color: #86868b; font-size: 13px;"></span>-->
+                    <span th:text="'📅 Due: ' + ${#temporals.format(sub.dueDate, 'MMM dd, yyyy')}"></span>
+                    <a th:if="${sub.filePath != null}" th:href="'/student/download/' + ${sub.id}" class="btn btn-primary">📎 Download</a>
+                    <a th:if="${sub.status == 'PENDING'}" th:href="'/student/assignments/' + ${sub.assignmentId} + '/submit'" class="btn btn-primary">🔄 Resubmit</a>
+                </div>
+
+                <div th:if="${sub.feedback != null}" class="feedback-text">
+                    <strong>📝 Instructor Feedback:</strong><br>
+                    <span th:text="${sub.feedback}"></span>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(submissions)}" class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <h3>No submissions yet</h3>
+            <p>Submit your first assignment to see it here!</p>
+            <a href="/student/courses" class="btn btn-primary" style="margin-top: 16px;">Browse Courses →</a>
+        </div>
+    </div>
+
+<!--    todo-->
+<!--    &lt;!&ndash; Pagination for this page need to adapt &ndash;&gt;-->
+<!--    <div th:if="${page != null and page.totalPages > 1}" class="pagination">-->
+<!--        <a th:if="${page.page > 0}" th:href="'/courses?page=' + ${page.page - 1} + '&size=' + ${page.size} + (${keyword != null} ? '&keyword=' + ${keyword} : '')"-->
+<!--           class="btn btn-secondary">← Previous</a>-->
+<!--        <span style="padding: 10px 20px; color: #86868b;">-->
+<!--                Page <span th:text="${page.page + 1}">1</span> of <span th:text="${page.totalPages}">1</span>-->
+<!--            </span>-->
+<!--        <a th:if="${page.page + 1 < page.totalPages}" th:href="'/courses?page=' + ${page.page + 1} + '&size=' + ${page.size} + (${keyword != null} ? '&keyword=' + ${keyword} : '')"-->
+<!--           class="btn btn-secondary">Next →</a>-->
+<!--    </div>-->
+
+</div>
+</body>
+</html>

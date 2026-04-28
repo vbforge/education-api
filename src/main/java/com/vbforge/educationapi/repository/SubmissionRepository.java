@@ -79,6 +79,8 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Object[]> findStudentSubmissionsWithDetailsNative(@Param("studentId") Long studentId);
 
 
+
+
     @Query(value = "SELECT s.id as submission_id, a.id as assignment_id, a.title, a.due_date, s.score, s.status, c.name as course_name, a.points_possible, s.file_path " +
             "FROM submissions s " +
             "JOIN assignments a ON a.id = s.assignment_id " +
@@ -88,6 +90,19 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             "ORDER BY a.due_date ASC",
             nativeQuery = true)
     List<Object[]> findSubmissionsWithDetailsNative(@Param("studentId") Long studentId);
+
+
+    @Query(value = "SELECT s.id as submission_id, a.id as assignment_id, " +
+            "a.title, a.due_date, s.score, s.status, c.name as course_name, a.points_possible, s.file_path, s.submitted_at, s.feedback " +
+            "FROM submissions s " +
+            "JOIN assignments a ON a.id = s.assignment_id " +
+            "JOIN modules m ON m.id = a.module_id " +
+            "JOIN courses c ON c.id = m.course_id " +
+            "WHERE s.student_id = :studentId " +
+            "ORDER BY s.submitted_at DESC",
+            nativeQuery = true)
+    List<Object[]> findSubmissionsWithDetailsNative2(@Param("studentId") Long studentId);
+
 
     @Query(value = "SELECT a.title, c.name, s.score, a.points_possible, s.feedback, s.submitted_at, s.updated_at " +
             "FROM submissions s " +
@@ -138,5 +153,14 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
             "ORDER BY due_date ASC",
             nativeQuery = true)
     List<Object[]> findPendingSubmissionsForStudentNative(@Param("studentId") Long studentId);
+
+
+    @Query("SELECT s FROM Submission s " +
+            "JOIN FETCH s.assignment a " +
+            "JOIN FETCH a.module m " +
+            "JOIN FETCH m.course c " +
+            "WHERE s.student.id = :studentId " +
+            "ORDER BY s.submittedAt DESC")
+    List<Submission> findSubmissionsWithDetailsByStudentId(@Param("studentId") Long studentId);
 
 }

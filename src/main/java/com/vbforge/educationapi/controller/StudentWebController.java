@@ -24,6 +24,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -787,6 +789,61 @@ public class StudentWebController {
         }
 
         return "redirect:/student/profile";
+    }
+
+    @GetMapping("/history")
+    public String submissionHistory(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        if (userDetails == null) return "redirect:/login";
+
+        try {
+            Student student = studentService.getStudentOrThrowByEmail(userDetails.getUsername());
+            Long studentId = student.getId();
+
+            // Get all submissions with details
+            List<Object[]> results = submissionRepository.findSubmissionsWithDetailsNative2(studentId);
+
+            List<Map<String, Object>> submissions = new ArrayList<>();
+            for (Object[] row : results) {
+                Map<String, Object> sub = new HashMap<>();
+                sub.put("id", row[0]);           // submission_id
+                sub.put("assignmentId", row[1]); // assignment_id
+                sub.put("assignmentTitle", row[2]);
+                sub.put("dueDate", convertToLocalDateTime(row[3]));
+                sub.put("score", row[4]);
+                sub.put("status", row[5]);
+                sub.put("courseName", row[6]);
+                sub.put("pointsPossible", row[7]);
+                sub.put("filePath", row[8]);
+                sub.put("submittedAt", convertToLocalDateTime(row[3])); // You'll need to adjust - the query needs submitted_at
+                sub.put("feedback", row[10]); // You'll need to adjust - the query needs submitted_at
+                submissions.add(sub);
+            }
+
+            model.addAttribute("submissions", submissions);
+            model.addAttribute("title", "Submission History");
+
+        } catch (Exception e) {
+            System.err.println("Error in submissionHistory: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("submissions", new ArrayList<>());
+        }
+
+        return "student-submission-history";
+    }
+
+    private LocalDateTime convertToLocalDateTime(Object value) {
+        if (value == null) return null;
+
+        if (value instanceof Timestamp ts) {
+            return ts.toLocalDateTime();
+        }
+
+        if (value instanceof LocalDateTime ldt) {
+            return ldt;
+        }
+
+        throw new IllegalArgumentException("Unsupported date type: " + value.getClass());
     }
 
 }
