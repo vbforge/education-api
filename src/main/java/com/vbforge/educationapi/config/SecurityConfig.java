@@ -52,7 +52,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/students/register").permitAll()
 
                     // Public
-                    .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                    .requestMatchers(
+                            "/login",
+                            "/register",
+                            "/forgot-password",
+                            "/reset-password",
+                            "/css/**",
+                            "/js/**",
+                            "/images/**").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
 
                     // Student endpoints

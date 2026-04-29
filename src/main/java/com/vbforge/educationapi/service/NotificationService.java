@@ -121,4 +121,9 @@ public class NotificationService {
             // Don't throw exception - email failure shouldn't break the main flow
         }
     }
+
+    @Async
+    public void sendPasswordResetEmail(String toEmail, String subject, String body) {
+        sendEmail(toEmail, subject, body);
+    }
 }
