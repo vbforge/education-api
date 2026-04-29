@@ -38,11 +38,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-educationapi}
 
   mailhog:
-    image: mailhog/mailhog
+    image: mailhog/mailhog:latest
     container_name: educationapi_mailhog
     ports:
-      - "1025:1025"    # SMTP — app sends here
-      - "8025:8025"    # Web UI — you view emails here
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI
     restart: unless-stopped
 
 volumes:
