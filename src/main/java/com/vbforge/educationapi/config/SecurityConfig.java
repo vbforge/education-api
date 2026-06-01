@@ -70,6 +70,7 @@ public class SecurityConfig {
 
                     // Admin endpoints
                     .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/actuator/**").hasRole("ADMIN")
 
                     // API endpoints (keep existing)
                     .requestMatchers(HttpMethod.POST, "/api/v1/students/register").permitAll()
