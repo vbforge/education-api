@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@Profile({"local", "test"})          // never runs in docker/prod
+@Profile({"local", "test", "docker"})
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 

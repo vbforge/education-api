@@ -1,5 +1,5 @@
 services:
-
+  # MySQL Database
   db:
     image: mysql:8.0
     container_name: educationapi_db
@@ -14,29 +14,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-secret}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - education_network
 
-  app:
-    volumes:
-      - uploads_data:/app/uploads
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: educationapi_app
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy   # waits for MySQL to be ready
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      DB_USERNAME: ${DB_USERNAME:-educationapi}
-      DB_PASSWORD: ${DB_PASSWORD:-educationapi}
-
+  # MailHog for email testing (captures emails without sending)
   mailhog:
     image: mailhog/mailhog:latest
     container_name: educationapi_mailhog
@@ -44,7 +29,39 @@ services:
       - "1025:1025"  # SMTP port
       - "8025:8025"  # Web UI
     restart: unless-stopped
+    networks:
+      - education_network
+
+  # Spring Boot Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: educationapi_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: ${DB_USERNAME:-educationapi}
+      DB_PASSWORD: ${DB_PASSWORD:-educationapi}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - education_network
 
 volumes:
   mysql_data:
   uploads_data:
+
+networks:
+  education_network:
+    driver: bridge
