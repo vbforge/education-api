@@ -1,47 +1,87 @@
-# Make script executable
+# 🧪 How to Run Tests
+
+## Prerequisites
+
+Make the test script executable:
+
+```bash
 chmod +x run-tests.sh
+```
 
-# Run all tests
+---
+
+## Run Tests
+
+### Run All Tests
+
+```bash
 ./run-tests.sh
+```
 
-# Or run specific test
+### Run a Specific Test Class
+
+```bash
 ./mvnw test -Dtest=CourseServiceTest
+```
 
-# Run with coverage
+### Generate Code Coverage Report
+
+```bash
 ./mvnw clean test jacoco:report
+```
+
+Coverage report:
+
+```text
+target/site/jacoco/index.html
+```
 
 ---
 
-# quick test command
+## Quick Test Commands
 
-# Run all tests
+### Run All Tests
+
+```bash
 ./mvnw test
+```
 
-# Run specific test
+### Run a Specific Test
+
+```bash
 ./mvnw test -Dtest=CourseServiceTest
+```
 
-# Run with debug
+### Run Tests with Debug Output
+
+```bash
 ./mvnw test -X
+```
 
 ---
 
+## Automation Script
+
+Create a file named `run-tests.sh`:
+
+```bash
 #!/bin/bash
 
 echo "========================================="
 echo "Running Education API Tests"
 echo "========================================="
 
-# Run unit tests
+# Unit Tests
 echo ""
 echo "📦 Running Unit Tests..."
 ./mvnw test -Dtest=*ServiceTest
 
-# Run integration tests
+# Integration Tests
 echo ""
 echo "🔗 Running Integration Tests..."
 ./mvnw test -Dtest=*IntegrationTest
 
-# Run all tests with coverage
+# Coverage Report
 echo ""
 echo "📊 Running All Tests with Coverage Report..."
 ./mvnw clean test jacoco:report
@@ -49,3 +89,10 @@ echo "📊 Running All Tests with Coverage Report..."
 echo ""
 echo "✅ Tests completed!"
 echo "📈 Coverage report: target/site/jacoco/index.html"
+```
+
+### Execute the Script
+
+```bash
+./run-tests.sh
+```
