@@ -5,20 +5,19 @@ spring:
     username: sa
     password:
 
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-
-  mail:
-    host: localhost              # no real mail in tests
-    port: 1025
+    properties:
+      hibernate:
+        format_sql: true
 
 logging:
   level:
     com.vbforge.educationapi: DEBUG
+    org.springframework.test: DEBUG
+
+app:
+  storage:
+    upload-dir: ./test-uploads
